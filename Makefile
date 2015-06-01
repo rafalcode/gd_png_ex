@@ -11,6 +11,7 @@ splim: splim.c
 cotten: cotten.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
+# "exap": examine png. no writing.
 exap: exap.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
