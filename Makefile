@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-g -Wall
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
-EXES=splim cotten imtile tilim exap
+EXES=splim cotten imtile tilim exap seepx
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
@@ -13,6 +13,10 @@ cotten: cotten.c
 
 # "exap": examine png. no writing.
 exap: exap.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
+# "seepx": examine png. no writing.
+seepx: seepx.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
 imtile: imtile.c
