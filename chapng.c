@@ -140,11 +140,11 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
         abort_("[process_file] color_type of input file must be PNG_COLOR_TYPE_RGB (is %d)", info_ptr->color_type);
 
     int x, y;
-    png_byte *ptr;
+    png_byte *ptr, *row;
     for (y=0; y<h; y++) {
-        png_byte* row = row_ptrs[y];
+        row = row_ptrs[y];
         for (x=0; x<w; x++) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3; /* jump in threes */
 #ifdef DBG
             if (y==21)
                 printf("Pixel at position [ %d - %d ] has the following RGB values: %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2]);
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
     for (y=0; y<h; y++)
         free(row_ptrs[y]);
     free(row_ptrs);
-    png_destroy_write_struct(NULL, &info_ptr);
+    png_destroy_write_struct(NULL, &info_ptr); /* you would think the info_ptr was killed in the write function, but it was only half-killed */
 
     return 0;
 }
