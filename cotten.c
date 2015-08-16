@@ -181,7 +181,7 @@ int main(int argc, char **argv)
         abort_("Usage: program_name <file_in> <file_out>");
 
     read_png_file(argv[1]);
-    process_file();
+//    process_file();
     write_png_file(argv[2]);
 
     return 0;
