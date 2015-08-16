@@ -3,7 +3,7 @@ CFLAGS=-g -Wall
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx
+EXES=splim cotten imtile tilim exap chapng seepx olpng
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
