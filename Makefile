@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-g -Wall
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
-EXES=splim cotten imtile tilim exap
+EXES=splim cotten imtile tilim exap chapng
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
@@ -11,7 +11,10 @@ splim: splim.c
 cotten: cotten.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
-exap: exap.c
+# change png: simple - if any anything -proof of concept for 
+# based on cottenceau's code
+# trying to localize the variable: global variables: bad!
+chapng: chapng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
 imtile: imtile.c
