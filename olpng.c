@@ -24,6 +24,17 @@ typedef struct /* sol_t */
     int *ol; /* of size eni-bgi: values */
 } sol_t;
 
+typedef struct /* pi_t, pair of indices */
+{
+    int i, v;
+} pi_t;
+
+typedef struct /* i_t, pair of indices */
+{
+    int b, e; /* beginning, end index */
+    int *s1, *s2; /* array from either side */
+} i_t;
+
 void abort_(const char *s, ...)
 {
     va_list args;// whoa there's a struct I've never heard of! STDARG!!!
@@ -145,28 +156,95 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
     if (info_ptr->color_type != PNG_COLOR_TYPE_RGB)
         abort_("[process_file] color_type of input file must be PNG_COLOR_TYPE_RGB (is %d)", info_ptr->color_type);
 
-    int x, y;
+    int x, y, i, j;
     png_byte *row, *ptr;
-    // sol_t lol[3], bol[3], rol[3], tol[3];
-    sol_t lol[3];
+    i_t loi[3]={ {0,0}, {0,0}, {0,0} }; /* left outline indices */
+    int bav[3];
+    for(i=0;i<3;++i) 
+        bav[i]=(int)row_ptrs[2][2*3+i]; /* background pixel value, at 2,2 for each of the three, second pixel starts at 6 */
+    unsigned char nocha[3]={1,1,1}; /* no change flag */
+
+#ifdef DBG2
+    printf("bavs: ");
+    for(i=0;i<3;++i) 
+        printf("%d ", bav[i]);
+    printf("\n");
+#endif
+
+    /* first, we start on left and look for first y index that holds a chnage from background val */
     for (y=0; y<h; y++) {
         row = row_ptrs[y];
         for (x=0; x<w; x++) {
             ptr = &(row[x*3]);
-            if (y==21)
-                printf("Pixel at position [ %d - %d ] has the following RGB values: %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2]);
-#endif
-            /* The processing now begins ... set red value to 0 and green value to the blue one */
-            ptr[0] = 0;
-            ptr[1] = ptr[2];
+            for(j=0;j<3;++j) 
+                if((ptr[j] != bav[j]) & nocha[j]) {
+                    loi[j].b=y;
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                goto out1;
         }
     }
-    return;
+out1: for(i=0;i<3;++i) 
+          printf("lbi=%d; ", loi[i].b);
+      printf("\n"); 
+
+      for(i=0;i<3;++i) 
+          nocha[i]=1;
+      for (y=h-1; y>=0; --y) {
+          row = row_ptrs[y];
+          for (x=0; x<w; x++) {
+              ptr = &(row[x*3]);
+              for(j=0;j<3;++j) 
+                  if((ptr[j] != bav[j]) & nocha[j]) {
+                      loi[j].e=y;
+                      nocha[j]=0;
+                  }
+              if( !nocha[0] & !nocha[1] & !nocha[2])
+                  goto out2;
+          }
+      }
+out2: for(i=0;i<3;++i) 
+          printf("lei=%d; ", loi[i].e);
+      printf("\n"); 
+
+      /* at this point we have to choose between the 3 starting and 3 ending indices*/
+      /* choose max of former and min of latter */
+
+      int rmx=loi[0].b, rmn=loi[0].e;
+      for(i=1;i<3;++i) {
+          if(loi[i].b>rmx)
+              rmx=loi[i].b;
+          if(loi[i].e<rmn)
+              rmn=loi[i].e;
+      }
+      loi.s1=malloc(3*(rmx-rmn)*sizeof(int));
+      for(i=0;i<3;++i) 
+          nocha[i]=1;
+    for (y=rmx; y<=rmn; y++) {
+        row = row_ptrs[y];
+        for (x=0; x<w; x++) {
+            ptr = &(row[x*3]);
+            for(j=0;j<3;++j) 
+                  if((ptr[j] != bav[j]) & nocha[j]) {
+                      loi[i].s1[3*x+j]=ptr[j];
+                      nocha[j]=0;
+                  }
+              if( !nocha[0] & !nocha[1] & !nocha[2])
+                  goto out3;
+        }
+    }
+
+      loi.s2=malloc(3*(rmx-rmn)*sizeof(int));
+
+      free(loi.s1);
+      free(loi.s2);
+      return;
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 2)
         abort_("Usage: program_name <file_in> <file_out>");
 
     int w, h, y;
@@ -177,7 +255,7 @@ int main(int argc, char **argv)
 
     process_file(w, h, row_ptrs, info_ptr);
 
-    write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
+    //    write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
 
     for (y=0; y<h; y++)
         free(row_ptrs[y]);
