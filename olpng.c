@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 {
     if (argc != 3)
         abort_("Usage: program_name <file_in> <file_out>");
-
+ 
     int w, h, y;
     png_byte color_type, bit_depth;
     png_infop info_ptr;
