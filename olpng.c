@@ -357,7 +357,7 @@ out2: for(i=0;i<3;++i)
               for(i=1;i<3;++i) {
                   if(lsci[i].h1[y-fir]>cfic)
                       cfic=lsci[i].h1[y-fir];
-                  if(lsci[i].h2[y-fir]<clar)
+                  if(lsci[i].h2[y-fir]<clac)
                       clac=lsci[i].h2[y-fir];
               }
               for (x=0; x<cfic; x++)
@@ -377,7 +377,7 @@ out2: for(i=0;i<3;++i)
        * difficult. Anyhow, for the from-top and from-bottom traces, there are only two horiz intervals
        * we need worry about for top to first stop val, bottom to last stopval operations:
        * vfir - vlar and cfir - clar */
-      int *tfir, tlar;
+      int tfir, tlar;
       for (x=vfic; x<=vlac; x++) {
           tfir=lsci[0].v1[x-fic];
           for(i=1;i<3;++i) {
