@@ -24,10 +24,12 @@ typedef struct /* sol_t */
     int *ol; /* of size eni-bgi: values */
 } sol_t;
 
-typedef struct /* pi_t, pair of indices */
+typedef struct /* pxpa_t, pixel path type */
 {
-    int i, v;
-} pi_t;
+    int *y, *x;
+    int bf;
+    int sz;
+} pxpa_t;
 
 typedef struct /* i_t, pair of indices */
 {
@@ -160,7 +162,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
 
     int x, y, i, j;
     png_byte *row, *ptr;
-    i_t *loi=calloc(3, sizeof(i_t));
+    i_t *lsci=calloc(3, sizeof(i_t)); /*Mne: Line Stop Channel Indices: for each RGB channel, indices of stop (pixel value changes from 4 dirs */
     int bav[3];
     for(i=0;i<3;++i) 
         bav[i]=(int)row_ptrs[2][2*3+i]; /* background pixel value, at 2,2 for each of the three, second pixel starts at 6 */
@@ -181,7 +183,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
             ptr = &(row[x*3]);
             for(j=0;j<3;++j) 
                 if((ptr[j] != bav[j]) & nocha[j]) {
-                    loi[j].hb=y;
+                    lsci[j].hb=y;
                     nocha[j]=0;
                 }
             if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -189,7 +191,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
         }
     }
 out1: for(i=0;i<3;++i) 
-          printf("lbi=%d; ", loi[i].hb);
+          printf("lbi=%d; ", lsci[i].hb);
       printf("\n"); 
 
       for(i=0;i<3;++i) 
@@ -200,7 +202,7 @@ out1: for(i=0;i<3;++i)
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
                   if((ptr[j] != bav[j]) & nocha[j]) {
-                      loi[j].he=y;
+                      lsci[j].he=y;
                       nocha[j]=0;
                   }
               if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -208,28 +210,28 @@ out1: for(i=0;i<3;++i)
           }
       }
 out2: for(i=0;i<3;++i) 
-          printf("lei=%d; ", loi[i].he);
+          printf("lei=%d; ", lsci[i].he);
       printf("\n"); 
 
       /* at this point we have to choose between the 3 starting and 3 ending indices*/
       /* choose max of former and min of latter */
 
-      int fir=loi[0].hb /* first row with stopval */, lar=loi[0].he /* last row with stopval*/;
+      int fir=lsci[0].hb /* first row with stopval */, lar=lsci[0].he /* last row with stopval*/;
       for(i=1;i<3;++i) {
-          if(loi[i].hb>fir)
-              fir=loi[i].hb;
-          if(loi[i].he<lar)
-              lar=loi[i].he;
+          if(lsci[i].hb>fir)
+              fir=lsci[i].hb;
+          if(lsci[i].he<lar)
+              lar=lsci[i].he;
       }
       printf("fir:%d, lar:%d\n", fir, lar); 
       for(i=0;i<3;++i) 
-          loi[i].h1=malloc((lar-fir+1)*sizeof(int));
+          lsci[i].h1=malloc((lar-fir+1)*sizeof(int));
 
       /* first from the first side (i.e. left */
       /* but we also stealth get our vb and ve values */
       for(j=0;j<3;++j) {
-          loi[j].vb=0x7FFFFFFF;
-          loi[j].ve=0;
+          lsci[j].vb=0x7FFFFFFF;
+          lsci[j].ve=0;
 
       }
       for (y=fir; y<=lar; y++) {
@@ -239,9 +241,9 @@ out2: for(i=0;i<3;++i)
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
                   if((ptr[j] != bav[j]) & nocha[j]) {
-                      loi[j].h1[y-fir]=x;
-                      if(loi[j].vb>x)
-                          loi[j].vb=x; /* looking for the smallest value of x from the left */
+                      lsci[j].h1[y-fir]=x;
+                      if(lsci[j].vb>x)
+                          lsci[j].vb=x; /* looking for the smallest value of x from the left */
                       nocha[j]=0;
                   }
               if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -251,7 +253,7 @@ out2: for(i=0;i<3;++i)
 
       /* second from the second horizontal side (i.e. right */
       for(i=0;i<3;++i) 
-          loi[i].h2=malloc((lar-fir+1)*sizeof(int));
+          lsci[i].h2=malloc((lar-fir+1)*sizeof(int));
       for (y=fir; y<=lar; y++) {
           row = row_ptrs[y];
           memset(nocha, 1, 3*sizeof(unsigned char));
@@ -259,9 +261,9 @@ out2: for(i=0;i<3;++i)
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
                   if((ptr[j] != bav[j]) & nocha[j]) {
-                      loi[j].h2[y-fir]=x;
-                      if(loi[j].ve<x)
-                          loi[j].ve=x; /* looking for the highest value of x from the left */
+                      lsci[j].h2[y-fir]=x;
+                      if(lsci[j].ve<x)
+                          lsci[j].ve=x; /* looking for the highest value of x from the left */
                       nocha[j]=0;
                   }
               if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -273,36 +275,36 @@ out2: for(i=0;i<3;++i)
       for(i=0;i<lar-fir+1;++i) {
           printf("%d:", i+fir);
           for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", loi[j].h1[i]);
+              printf((j==2)?"%d":"%d/", lsci[j].h1[i]);
           printf("-"); 
           for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", loi[j].h2[i]);
+              printf((j==2)?"%d":"%d/", lsci[j].h2[i]);
           printf(" "); 
       }
       printf("\n"); 
 #endif
 
       /* having done from left and right, you may have noticed that we got ve and vb in the process */
-      int fic=loi[0].vb /* first column with stopval */, lac=loi[0].ve /* last column with stopval*/;
+      int fic=lsci[0].vb /* first column with stopval */, lac=lsci[0].ve /* last column with stopval*/;
       for(i=1;i<3;++i) {
-          if(loi[i].vb>fic)
-              fic=loi[i].vb;
-          if(loi[i].ve<lac)
-              lac=loi[i].ve;
+          if(lsci[i].vb>fic)
+              fic=lsci[i].vb;
+          if(lsci[i].ve<lac)
+              lac=lsci[i].ve;
       }
       printf("fic:%d, lac:%d\n", fic, lac); 
       /* notice AGAIN, that we've chosen the most aggressive of the colours */
 
       /* capture stopvals from top */
       for(i=0;i<3;++i) 
-          loi[i].v1=malloc((lac-fic+1)*sizeof(int));
+          lsci[i].v1=malloc((lac-fic+1)*sizeof(int));
 
       for (x=fic; x<=lac; x++) {
           memset(nocha, 1, 3*sizeof(unsigned char));
           for (y=0; y<h; y++) {
               for(j=0;j<3;++j) 
                   if((row_ptrs[y][x*3+j] != bav[j]) & nocha[j]) {
-                      loi[j].v1[x-fic]=y;
+                      lsci[j].v1[x-fic]=y;
                       nocha[j]=0;
                   }
               if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -311,14 +313,14 @@ out2: for(i=0;i<3;++i)
       }
       /* capture stopvals from bottom */
       for(i=0;i<3;++i) 
-          loi[i].v2=malloc((lac-fic+1)*sizeof(int));
+          lsci[i].v2=malloc((lac-fic+1)*sizeof(int));
 
       for (x=fic; x<=lac; x++) {
           memset(nocha, 1, 3*sizeof(unsigned char));
           for (y=h-1; y>=0; --y) {
               for(j=0;j<3;++j) 
                   if((row_ptrs[y][x*3+j] != bav[j]) & nocha[j]) {
-                      loi[j].v2[x-fic]=y;
+                      lsci[j].v2[x-fic]=y;
                       nocha[j]=0;
                   }
               if( !nocha[0] & !nocha[1] & !nocha[2])
@@ -330,10 +332,10 @@ out2: for(i=0;i<3;++i)
       for(i=0;i<lac-fic+1;++i) {
           printf("%d:", i+fic);
           for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", loi[j].v1[i]);
+              printf((j==2)?"%d":"%d/", lsci[j].v1[i]);
           printf("-"); 
           for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", loi[j].v2[i]);
+              printf((j==2)?"%d":"%d/", lsci[j].v2[i]);
           printf(" "); 
       }
       printf("\n"); 
@@ -341,87 +343,101 @@ out2: for(i=0;i<3;++i)
       /* OK, we have our information, now  we can set the background to anything we want */
       /* first off, right to first stop val, left to last stopval */
       /* temp fir and temp lar, useful for vert ops */
-      int *tfir=malloc((lar-fir+1)*sizeof(int));
-      int *tlar=malloc((lar-fir+1)*sizeof(int));
+      int vfic, vlac; /* Very first ir, very last row */
+      int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
       for (y=0; y<h; y++) {
           if( (y<fir) | (y>lar) ) {
               for (x=0; x<w; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
           } else {
-              tfir[y-fir]=loi[0].h1[y-fir];
-              tlar[y-fir]=loi[0].h2[y-fir];
+              cfic=lsci[0].h1[y-fir];
+              clac=lsci[0].h2[y-fir];
               for(i=1;i<3;++i) {
-                  if(loi[i].h1[y-fir]>tfir[y-fir])
-                      tfir[y-fir]=loi[i].h1[y-fir];
-                  if(loi[i].h2[y-fir]<tlar[y-fir])
-                      tlar[y-fir]=loi[i].h2[y-fir];
+                  if(lsci[i].h1[y-fir]>cfic)
+                      cfic=lsci[i].h1[y-fir];
+                  if(lsci[i].h2[y-fir]<clar)
+                      clac=lsci[i].h2[y-fir];
               }
-              for (x=0; x<tfir[y-fir]; x++)
+              for (x=0; x<cfic; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-              for (x=w-1; x>tlar[y-fir]; --x)
+              for (x=w-1; x>clac; --x)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
+              if((y-fir)==0) {
+                  vfic=cfic;
+                  vlac=clac;
+              }
           }
       }
-      /* second, top to first stop val, bottom to last stopval */
-      int tfic, tlac; /* temp fir and temp lar */
-      for (x=fic; x<=lac; x++) {
+
+      /* I finished up one night here, and the next day I found picking up the thread pretty
+       * difficult. Anyhow, for the from-top and from-bottom traces, there are only two horiz intervals
+       * we need worry about for top to first stop val, bottom to last stopval operations:
+       * vfir - vlar and cfir - clar */
+      int *tfir, tlar;
+      for (x=vfic; x<=vlac; x++) {
           memset(nocha, 1, 3*sizeof(unsigned char));
-          for (y=0; y<h; y++) {
-          if( (y<fir) | (y>lar) ) {
-              for (x=0; x<w; x++)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-          } else {
-              tfir=loi[0].h1[y-fir];
-              tlar=loi[0].h2[y-fir];
-              for(i=1;i<3;++i) {
-                  if(loi[i].h1[y-fir]>tfir)
-                      tfir=loi[i].h1[y-fir];
-                  if(loi[i].h2[y-fir]<tlar)
-                      tlar=loi[i].h2[y-fir];
-              }
-              for (x=0; x<tfir; x++)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-              for (x=w-1; x>tlar; --x)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
+          tfir=lsci[0].v1[x-fic];
+          tlar=lsci[0].v2[x-fic];
+          for(i=1;i<3;++i) {
+              if(lsci[i].v1[x-fic]>tfir)
+                  tfir=lsci[i].v1[x-fic];
+              if(lsci[i].v2[x-fic]<tlar)
+                  tlar=lsci[i].v2[x-fic];
           }
+          for (y=tfir; y<=tlar; y++) {
+                      for(j=0;j<3;++j) 
+                          row_ptrs[y][3*x+j] = 128;
+              } else {
+                  tfir=lsci[0].h1[y-fir];
+                  tlar=lsci[0].h2[y-fir];
+                  for(i=1;i<3;++i) {
+                      if(lsci[i].h1[y-fir]>tfir)
+                          tfir=lsci[i].h1[y-fir];
+                      if(lsci[i].h2[y-fir]<tlar)
+                          tlar=lsci[i].h2[y-fir];
+                  }
+                  for (x=0; x<tfir; x++)
+                      for(j=0;j<3;++j) 
+                          row_ptrs[y][3*x+j] = 128;
+                  for (x=w-1; x>tlar; --x)
+                      for(j=0;j<3;++j) 
+                          row_ptrs[y][3*x+j] = 128;
+              }
+          }
+
+          for(i=0;i<3;++i) {
+              free(lsci[i].h1);
+              free(lsci[i].h2);
+              free(lsci[i].v1);
+              free(lsci[i].v2);
+          }
+          free(lsci);
+          free(nocha);
+          return;
       }
 
-      for(i=0;i<3;++i) {
-          free(loi[i].h1);
-          free(loi[i].h2);
-          free(loi[i].v1);
-          free(loi[i].v2);
+      int main(int argc, char **argv)
+      {
+          if (argc != 3)
+              abort_("Usage: program_name <file_in> <file_out>");
+
+          int w, h, y;
+          png_byte color_type, bit_depth;
+          png_infop info_ptr;
+
+          png_bytep *row_ptrs=read_png_file(argv[1], &w, &h, &color_type, &bit_depth, &info_ptr);
+
+          process_file(w, h, row_ptrs, info_ptr);
+
+          write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
+
+          for (y=0; y<h; y++)
+              free(row_ptrs[y]);
+          free(row_ptrs);
+          png_destroy_write_struct(NULL, &info_ptr);
+
+          return 0;
       }
-      free(loi);
-      free(nocha);
-      return;
-}
-
-int main(int argc, char **argv)
-{
-    if (argc != 3)
-        abort_("Usage: program_name <file_in> <file_out>");
- 
-    int w, h, y;
-    png_byte color_type, bit_depth;
-    png_infop info_ptr;
-
-    png_bytep *row_ptrs=read_png_file(argv[1], &w, &h, &color_type, &bit_depth, &info_ptr);
-
-    process_file(w, h, row_ptrs, info_ptr);
-
-    write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
-
-    for (y=0; y<h; y++)
-        free(row_ptrs[y]);
-    free(row_ptrs);
-    png_destroy_write_struct(NULL, &info_ptr);
-
-    return 0;
-}
