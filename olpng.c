@@ -344,32 +344,30 @@ out2: for(i=0;i<3;++i)
       /* OK, we have our information, now  we can set the background to anything we want */
       /* first off, right to first stop val, left to last stopval */
       /* temp fir and temp lar, useful for vert ops */
-      int vfic, vlac; /* Very first ir, very last row */
-      int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
+      // int vfic, vlac; /* Very first ir, very last row */
+      // int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
+      int *fica=malloc((lar-fir+1)*sizeof(int));
+      int *laca=malloc((lar-fir+1)*sizeof(int));
       for (y=0; y<h; y++) {
           if( (y<fir) | (y>lar) ) {
               for (x=0; x<w; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
           } else {
-              cfic=lsci[0].h1[y-fir];
-              clac=lsci[0].h2[y-fir];
+              fica[y-fir]=lsci[0].h1[y-fir];
+              laca[y-fir]=lsci[0].h2[y-fir];
               for(i=1;i<3;++i) {
-                  if(lsci[i].h1[y-fir]>cfic)
-                      cfic=lsci[i].h1[y-fir];
-                  if(lsci[i].h2[y-fir]<clac)
-                      clac=lsci[i].h2[y-fir];
+                  if(lsci[i].h1[y-fir]>fica[y-fir])
+                      fica[y-fir]=lsci[i].h1[y-fir];
+                  if(lsci[i].h2[y-fir]<laca[y-fir])
+                      laca[y-fir]=lsci[i].h2[y-fir];
               }
-              for (x=0; x<cfic; x++)
+              for (x=0; x<fica[y-fir]; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-              for (x=w-1; x>clac; --x)
+              for (x=w-1; x>laca[y-fir]; --x)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-              if((y-fir)==0) {
-                  vfic=cfic;
-                  vlac=clac;
-              }
           }
       }
 
@@ -378,25 +376,23 @@ out2: for(i=0;i<3;++i)
        * we need worry about for top to first stop val, bottom to last stopval operations:
        * vfir - vlar and cfir - clar */
       int tfir, tlar;
-      for (x=vfic; x<=vlac; x++) {
-          tfir=lsci[0].v1[x-fic];
-          for(i=1;i<3;++i) {
-              if(lsci[i].v1[x-fic]>tfir)
-                  tfir=lsci[i].v1[x-fic];
+      for(j=0;j<(lar-fir+1); j++) {
+          for (x=fica[j]; x<=laca[j]; x++) {
+              tfir=lsci[0].v1[x-fic];
+              tlar=lsci[0].v2[x-fic];
+              for(i=1;i<3;++i) {
+                  if(lsci[i].v1[x-fic]>tfir)
+                      tfir=lsci[i].v1[x-fic];
+                  if(lsci[i].v2[x-fic]<tlar)
+                      tlar=lsci[i].v2[x-fic];
+              }
+              for (y=fir; y<=tfir; y++)
+                  for(j=0;j<3;++j) 
+                      row_ptrs[y][3*x+j] = 128;
+              for (y=lar; y>=tlar; --y)
+                  for(j=0;j<3;++j) 
+                      row_ptrs[y][3*x+j] = 128;
           }
-          for (y=fir; y<=tfir; y++)
-              for(j=0;j<3;++j) 
-                  row_ptrs[y][3*x+j] = 128;
-      }
-      for (x=cfic; x<=clac; x++) { /* extents of bottom row */
-          tlar=lsci[0].v2[x-fic];
-          for(i=1;i<3;++i) {
-              if(lsci[i].v2[x-fic]<tlar)
-                  tlar=lsci[i].v2[x-fic];
-          }
-          for (y=lar; y>=tlar; --y)
-              for(j=0;j<3;++j) 
-                  row_ptrs[y][3*x+j] = 128;
       }
 
       /* free-up stuff */
@@ -406,6 +402,8 @@ out2: for(i=0;i<3;++i)
           free(lsci[i].v1);
           free(lsci[i].v2);
       }
+      free(fica);
+      free(laca);
       free(lsci);
       free(nocha);
       return;
