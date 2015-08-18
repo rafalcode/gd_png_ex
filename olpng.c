@@ -340,6 +340,7 @@ out2: for(i=0;i<3;++i)
       }
       printf("\n"); 
 #endif
+      /* SETTING PIXELS STAGE */
       /* OK, we have our information, now  we can set the background to anything we want */
       /* first off, right to first stop val, left to last stopval */
       /* temp fir and temp lar, useful for vert ops */
@@ -378,66 +379,57 @@ out2: for(i=0;i<3;++i)
        * vfir - vlar and cfir - clar */
       int *tfir, tlar;
       for (x=vfic; x<=vlac; x++) {
-          memset(nocha, 1, 3*sizeof(unsigned char));
           tfir=lsci[0].v1[x-fic];
-          tlar=lsci[0].v2[x-fic];
           for(i=1;i<3;++i) {
               if(lsci[i].v1[x-fic]>tfir)
                   tfir=lsci[i].v1[x-fic];
+          }
+          for (y=fir; y<=tfir; y++)
+              for(j=0;j<3;++j) 
+                  row_ptrs[y][3*x+j] = 128;
+      }
+      for (x=cfic; x<=clac; x++) { /* extents of bottom row */
+          tlar=lsci[0].v2[x-fic];
+          for(i=1;i<3;++i) {
               if(lsci[i].v2[x-fic]<tlar)
                   tlar=lsci[i].v2[x-fic];
           }
-          for (y=tfir; y<=tlar; y++) {
-                      for(j=0;j<3;++j) 
-                          row_ptrs[y][3*x+j] = 128;
-              } else {
-                  tfir=lsci[0].h1[y-fir];
-                  tlar=lsci[0].h2[y-fir];
-                  for(i=1;i<3;++i) {
-                      if(lsci[i].h1[y-fir]>tfir)
-                          tfir=lsci[i].h1[y-fir];
-                      if(lsci[i].h2[y-fir]<tlar)
-                          tlar=lsci[i].h2[y-fir];
-                  }
-                  for (x=0; x<tfir; x++)
-                      for(j=0;j<3;++j) 
-                          row_ptrs[y][3*x+j] = 128;
-                  for (x=w-1; x>tlar; --x)
-                      for(j=0;j<3;++j) 
-                          row_ptrs[y][3*x+j] = 128;
-              }
-          }
-
-          for(i=0;i<3;++i) {
-              free(lsci[i].h1);
-              free(lsci[i].h2);
-              free(lsci[i].v1);
-              free(lsci[i].v2);
-          }
-          free(lsci);
-          free(nocha);
-          return;
+          for (y=lar; y>=tlar; --y)
+              for(j=0;j<3;++j) 
+                  row_ptrs[y][3*x+j] = 128;
       }
 
-      int main(int argc, char **argv)
-      {
-          if (argc != 3)
-              abort_("Usage: program_name <file_in> <file_out>");
-
-          int w, h, y;
-          png_byte color_type, bit_depth;
-          png_infop info_ptr;
-
-          png_bytep *row_ptrs=read_png_file(argv[1], &w, &h, &color_type, &bit_depth, &info_ptr);
-
-          process_file(w, h, row_ptrs, info_ptr);
-
-          write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
-
-          for (y=0; y<h; y++)
-              free(row_ptrs[y]);
-          free(row_ptrs);
-          png_destroy_write_struct(NULL, &info_ptr);
-
-          return 0;
+      /* free-up stuff */
+      for(i=0;i<3;++i) {
+          free(lsci[i].h1);
+          free(lsci[i].h2);
+          free(lsci[i].v1);
+          free(lsci[i].v2);
       }
+      free(lsci);
+      free(nocha);
+      return;
+}
+
+int main(int argc, char **argv)
+{
+    if (argc != 3)
+        abort_("Usage: program_name <file_in> <file_out>");
+
+    int w, h, y;
+    png_byte color_type, bit_depth;
+    png_infop info_ptr;
+
+    png_bytep *row_ptrs=read_png_file(argv[1], &w, &h, &color_type, &bit_depth, &info_ptr);
+
+    process_file(w, h, row_ptrs, info_ptr);
+
+    write_png_file(argv[2], w, h, color_type, bit_depth, row_ptrs);
+
+    for (y=0; y<h; y++)
+        free(row_ptrs[y]);
+    free(row_ptrs);
+    png_destroy_write_struct(NULL, &info_ptr);
+
+    return 0;
+}
