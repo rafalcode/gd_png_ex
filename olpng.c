@@ -18,6 +18,7 @@
 #define PNG_DEBUG 3
 #include <png.h>
 
+
 typedef struct /* sol_t */
 {
     int bgi, eni; /* beginning and end indices */
