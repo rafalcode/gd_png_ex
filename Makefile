@@ -21,6 +21,8 @@ chapng: chapng.c
 # outlines in pngs: prepareation for eigenimages
 olpng: olpng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+olpng_d: olpng.c
+	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
 
 # "seepx": examine png. no writing.
 seepx: seepx.c

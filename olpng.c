@@ -1,12 +1,12 @@
 /*
+ * Base code:
  * Copyright 2002-2008 Guillaume Cottenceau.
+ * Modifications:
+ * Copyright 2015 Ramón Fallon
  *
  * This software may be freely redistributed under the terms
  * of the X11 license.
  *
- * RFnotes: supposedly this is an easy test of libpng ...
- * but it isn't really , note hte three dots in the first function's arguments: WTF?
- * is that from stdarg.h?
  */
 
 #include <unistd.h>
@@ -24,13 +24,6 @@ typedef struct /* sol_t */
     int bgi, eni; /* beginning and end indices */
     int *ol; /* of size eni-bgi: values */
 } sol_t;
-
-typedef struct /* pxpa_t, pixel path type */
-{
-    int *y, *x;
-    int bf;
-    int sz;
-} pxpa_t;
 
 typedef struct /* i_t, pair of indices */
 {
@@ -225,8 +218,9 @@ out2: for(i=0;i<3;++i)
               lar=lsci[i].he;
       }
       printf("fir:%d, lar:%d\n", fir, lar); 
+      int hei4rays=lar-fir+1;
       for(i=0;i<3;++i) 
-          lsci[i].h1=malloc((lar-fir+1)*sizeof(int));
+          lsci[i].h1=malloc(hei4rays*sizeof(int));
 
       /* first from the first side (i.e. left */
       /* but we also - by stealth - get our vb and ve values */
@@ -271,7 +265,7 @@ out2: for(i=0;i<3;++i)
                   break; /* i.e. go to next row */
           }
       }
-#ifdef DBG
+#ifdef DBG2
       printf("Listing rownum:rl/gl/bl-rr/gr/br (row stop points from left-right:\n"); 
       for(i=0;i<lar-fir+1;++i) {
           printf("%d:", i+fir);
@@ -295,10 +289,14 @@ out2: for(i=0;i<3;++i)
       }
       printf("fic:%d, lac:%d\n", fic, lac); 
       int wid4rays/* width for rays*/=lac-fic+1;
+      int npp=4*hei4rays+4*wid4rays;
+      int *pp=malloc(npp*sizeof(int));
       /* notice AGAIN, that we've chosen the most aggressive of the colours */
       /* we can creat a mask for the top and bottom "rays" */
       unsigned long *tmsk/*top mask*/=calloc(1+(wid4rays-1)/64, sizeof(unsigned long));
       unsigned long *bmsk/*bottom mask*/=calloc(1+(wid4rays-1)/64, sizeof(unsigned long));
+      int *toprays=malloc(2*wid4rays*sizeof(int));
+      int *botrays=malloc(2*wid4rays*sizeof(int));
       /* not we will not use these yet ... because we want to go thorough on an increasing,
        * or decreasing row basis */
 
@@ -334,7 +332,7 @@ out2: for(i=0;i<3;++i)
                   break; /* i.e. go to next column */
           }
       }
-#ifdef DBG
+#ifdef DBG2
       printf("Listing colnum:rt/gt/bt-rb/gb/bb (row stop points from top-bottom:\n"); 
       for(i=0;i<wid4rays;++i) {
           printf("%d:", i+fic);
@@ -356,6 +354,10 @@ out2: for(i=0;i<3;++i)
       int tfic, tlac; /* temporary first and last column */
       int tfir, tlar;
       int xx, yy;
+      int ppoffset1=0;
+      int ppoffset2=2*hei4rays + 2* wid4rays;
+      int ppoffset3=4*hei4rays + 2* wid4rays;
+      int ppoffset4=2*hei4rays;
       for (y=0; y<h; y++) {
           if( (y<fir) | (y>lar) ) {
               for (x=0; x<w; x++)
@@ -374,11 +376,16 @@ out2: for(i=0;i<3;++i)
               for (x=0; x<tfic; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
+              pp[ppoffset1+2*(y-fir)]=tfic;
+              pp[ppoffset1+2*(y-fir)+1]=y;
+
               for (x=w-1; x>tlac; --x)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-              /* now we're also going to ray down the columns */
+              pp[ppoffset2+2*(y-fir)]=tlac;
+              pp[ppoffset2+2*(y-fir)+1]=y;
 
+              /* now we're also going to ray down the columns */
               for (x=tfic; x<=tlac; x++) {
                   xx=x-fic; /* not the temp fic no*/
                   if( tmsk[xx/64] & (1<<(xx%64)) ) /* check */
@@ -394,40 +401,61 @@ out2: for(i=0;i<3;++i)
                           row_ptrs[yy][3*x+j] = 128;
 
                   tmsk[xx/64] |= 1<<(xx%64); /* set */
+                  toprays[2*xx]=x;
+                  toprays[2*xx+1]=tfir;
+                  pp[ppoffset3+2*xx]=x;
+                  pp[ppoffset3+2*xx+1]=tfir;
 
               }
           }
       }
       /* now we starting from the bottom */
       for (y=lar; y>=fir; --y) {
-              /* choose between colors */
-              tfic=lsci[0].h1[y-fir];
-              tlac=lsci[0].h2[y-fir];
+          /* choose between colors */
+          tfic=lsci[0].h1[y-fir];
+          tlac=lsci[0].h2[y-fir];
+          for(i=1;i<3;++i) {
+              if(lsci[i].h1[y-fir]>tfic)
+                  tfic=lsci[i].h1[y-fir];
+              if(lsci[i].h2[y-fir]<tlac)
+                  tlac=lsci[i].h2[y-fir];
+          }
+          for (x=tfic; x<=tlac; x++) {
+              xx=x-fic; /* not the temp fic no*/
+              if( bmsk[xx/64] & (1<<(xx%64)) ) /* check */
+                  continue;
+              /* PUT IN HERE: COLUMN RAY CODE */
+              tlar=lsci[0].v2[xx];
               for(i=1;i<3;++i) {
-                  if(lsci[i].h1[y-fir]>tfic)
-                      tfic=lsci[i].h1[y-fir];
-                  if(lsci[i].h2[y-fir]<tlac)
-                      tlac=lsci[i].h2[y-fir];
+                  if(lsci[i].v2[xx]<tlar)
+                      tlar=lsci[i].v2[xx];
               }
-              for (x=tfic; x<=tlac; x++) {
-                  xx=x-fic; /* not the temp fic no*/
-                  if( bmsk[xx/64] & (1<<(xx%64)) ) /* check */
-                      continue;
-                  /* PUT IN HERE: COLUMN RAY CODE */
-                  tlar=lsci[0].v2[xx];
-                  for(i=1;i<3;++i) {
-                      if(lsci[i].v2[xx]<tlar)
-                          tlar=lsci[i].v2[xx];
-                  }
-                  for (yy=lar; yy>=tlar; --yy)
-                      for(j=0;j<3;++j) 
-                          row_ptrs[yy][3*x+j] = 128;
+              for (yy=lar; yy>=tlar; --yy)
+                  for(j=0;j<3;++j) 
+                      row_ptrs[yy][3*x+j] = 128;
 
-                  bmsk[xx/64] |= 1<<(xx%64); /* set */
+              bmsk[xx/64] |= 1<<(xx%64); /* set */
+              pp[ppoffset4+2*xx]=x;
+              pp[ppoffset4+2*xx+1]=tlar;
+          }
+      }
 
-              }
-        }
 
+#ifdef DBG
+      printf("LHS:\n"); 
+      for(i=0;i<hei4rays;++i) 
+          printf("%d:%d ", pp[2*i], pp[2*i+1]); 
+      printf("\nBTM:\n"); 
+      for(i=0;i<wid4rays;++i) 
+          printf("%d:%d ", pp[ppoffset4+2*i], pp[ppoffset4+2*i+1]); 
+      printf("\nRHS:\n"); 
+      for(i=0;i<hei4rays;++i) 
+          printf("%d:%d ", pp[ppoffset2+2*i], pp[ppoffset2+2*i+1]); 
+      printf("\nTOP:\n"); 
+      for(i=0;i<wid4rays;++i) 
+          printf("%d:%d ", pp[ppoffset3+2*i], pp[ppoffset3+2*i+1]); 
+      printf("\n"); 
+#endif
       /* free-up stuff */
       for(i=0;i<3;++i) {
           free(lsci[i].h1);
@@ -437,6 +465,9 @@ out2: for(i=0;i<3;++i)
       }
       free(tmsk);
       free(bmsk);
+      free(pp);
+      free(toprays);
+      free(botrays);
       free(lsci);
       free(nocha);
       return;
