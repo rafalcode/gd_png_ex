@@ -229,7 +229,7 @@ out2: for(i=0;i<3;++i)
           lsci[i].h1=malloc((lar-fir+1)*sizeof(int));
 
       /* first from the first side (i.e. left */
-      /* but we also stealth get our vb and ve values */
+      /* but we also - by stealth - get our vb and ve values */
       for(j=0;j<3;++j) {
           lsci[j].vb=0x7FFFFFFF;
           lsci[j].ve=0;
@@ -294,11 +294,17 @@ out2: for(i=0;i<3;++i)
               lac=lsci[i].ve;
       }
       printf("fic:%d, lac:%d\n", fic, lac); 
+      int wid4rays/* width for rays*/=lac-fic+1;
       /* notice AGAIN, that we've chosen the most aggressive of the colours */
+      /* we can creat a mask for the top and bottom "rays" */
+      unsigned long *tmsk/*top mask*/=calloc(1+(wid4rays-1)/64, sizeof(unsigned long));
+      unsigned long *bmsk/*bottom mask*/=calloc(1+(wid4rays-1)/64, sizeof(unsigned long));
+      /* not we will not use these yet ... because we want to go thorough on an increasing,
+       * or decreasing row basis */
 
       /* capture stopvals from top */
       for(i=0;i<3;++i) 
-          lsci[i].v1=malloc((lac-fic+1)*sizeof(int));
+          lsci[i].v1=malloc((wid4rays)*sizeof(int));
 
       for (x=fic; x<=lac; x++) {
           memset(nocha, 1, 3*sizeof(unsigned char));
@@ -330,7 +336,7 @@ out2: for(i=0;i<3;++i)
       }
 #ifdef DBG
       printf("Listing colnum:rt/gt/bt-rb/gb/bb (row stop points from top-bottom:\n"); 
-      for(i=0;i<lac-fic+1;++i) {
+      for(i=0;i<wid4rays;++i) {
           printf("%d:", i+fic);
           for(j=0;j<3;++j) 
               printf((j==2)?"%d":"%d/", lsci[j].v1[i]);
@@ -347,54 +353,80 @@ out2: for(i=0;i<3;++i)
       /* temp fir and temp lar, useful for vert ops */
       // int vfic, vlac; /* Very first ir, very last row */
       // int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
-      int *fica=malloc((lar-fir+1)*sizeof(int));
-      int *laca=malloc((lar-fir+1)*sizeof(int));
+      int tfic, tlac; /* temporary first and last column */
+      int tfir, tlar;
+      int xx, yy;
       for (y=0; y<h; y++) {
           if( (y<fir) | (y>lar) ) {
               for (x=0; x<w; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
           } else {
-              fica[y-fir]=lsci[0].h1[y-fir];
-              laca[y-fir]=lsci[0].h2[y-fir];
+              /* choose between colors */
+              tfic=lsci[0].h1[y-fir];
+              tlac=lsci[0].h2[y-fir];
               for(i=1;i<3;++i) {
-                  if(lsci[i].h1[y-fir]>fica[y-fir])
-                      fica[y-fir]=lsci[i].h1[y-fir];
-                  if(lsci[i].h2[y-fir]<laca[y-fir])
-                      laca[y-fir]=lsci[i].h2[y-fir];
+                  if(lsci[i].h1[y-fir]>tfic)
+                      tfic=lsci[i].h1[y-fir];
+                  if(lsci[i].h2[y-fir]<tlac)
+                      tlac=lsci[i].h2[y-fir];
               }
-              for (x=0; x<fica[y-fir]; x++)
+              for (x=0; x<tfic; x++)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-              for (x=w-1; x>laca[y-fir]; --x)
+              for (x=w-1; x>tlac; --x)
                   for(j=0;j<3;++j) 
                       row_ptrs[y][3*x+j] = 128;
-          }
-      }
+              /* now we're also going to ray down the columns */
 
-      /* I finished up one night here, and the next day I found picking up the thread pretty
-       * difficult. Anyhow, for the from-top and from-bottom traces, there are only two horiz intervals
-       * we need worry about for top to first stop val, bottom to last stopval operations:
-       * vfir - vlar and cfir - clar */
-      int tfir, tlar;
-      for(j=0;j<(lar-fir+1); j++) {
-          for (x=fica[j]; x<=laca[j]; x++) {
-              tfir=lsci[0].v1[x-fic];
-              tlar=lsci[0].v2[x-fic];
-              for(i=1;i<3;++i) {
-                  if(lsci[i].v1[x-fic]>tfir)
-                      tfir=lsci[i].v1[x-fic];
-                  if(lsci[i].v2[x-fic]<tlar)
-                      tlar=lsci[i].v2[x-fic];
+              for (x=tfic; x<=tlac; x++) {
+                  xx=x-fic; /* not the temp fic no*/
+                  if( tmsk[xx/64] & (1<<(xx%64)) ) /* check */
+                      continue;
+                  /* PUT IN HERE: COLUMN RAY CODE */
+                  tfir=lsci[0].v1[xx];
+                  for(i=1;i<3;++i) {
+                      if(lsci[i].v1[xx]>tfir)
+                          tfir=lsci[i].v1[xx];
+                  }
+                  for (yy=fir; yy<=tfir; yy++)
+                      for(j=0;j<3;++j) 
+                          row_ptrs[yy][3*x+j] = 128;
+
+                  tmsk[xx/64] |= 1<<(xx%64); /* set */
+
               }
-              for (y=fir; y<=tfir; y++)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-              for (y=lar; y>=tlar; --y)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
           }
       }
+      /* now we starting from the bottom */
+      for (y=lar; y>=fir; --y) {
+              /* choose between colors */
+              tfic=lsci[0].h1[y-fir];
+              tlac=lsci[0].h2[y-fir];
+              for(i=1;i<3;++i) {
+                  if(lsci[i].h1[y-fir]>tfic)
+                      tfic=lsci[i].h1[y-fir];
+                  if(lsci[i].h2[y-fir]<tlac)
+                      tlac=lsci[i].h2[y-fir];
+              }
+              for (x=tfic; x<=tlac; x++) {
+                  xx=x-fic; /* not the temp fic no*/
+                  if( bmsk[xx/64] & (1<<(xx%64)) ) /* check */
+                      continue;
+                  /* PUT IN HERE: COLUMN RAY CODE */
+                  tlar=lsci[0].v2[xx];
+                  for(i=1;i<3;++i) {
+                      if(lsci[i].v2[xx]<tlar)
+                          tlar=lsci[i].v2[xx];
+                  }
+                  for (yy=lar; yy>=tlar; --yy)
+                      for(j=0;j<3;++j) 
+                          row_ptrs[yy][3*x+j] = 128;
+
+                  bmsk[xx/64] |= 1<<(xx%64); /* set */
+
+              }
+        }
 
       /* free-up stuff */
       for(i=0;i<3;++i) {
@@ -403,8 +435,8 @@ out2: for(i=0;i<3;++i)
           free(lsci[i].v1);
           free(lsci[i].v2);
       }
-      free(fica);
-      free(laca);
+      free(tmsk);
+      free(bmsk);
       free(lsci);
       free(nocha);
       return;
