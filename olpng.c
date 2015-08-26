@@ -19,7 +19,7 @@
 #include <png.h>
 
 #define FULL64 0xFFFFFFFFFFFFFFFF
-#define PXVALUPDOWN 0 /* value of pixels on either side of background value within which variation is allowed */
+#define PXVALUPDOWN 15 /* value of pixels on either side of background value within which variation is allowed */
 
 typedef struct /* sol_t */
 {
@@ -189,8 +189,8 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
         for (x=0; x<w; x++) {
             ptr = &(row[x*3]);
             for(j=0;j<3;++j) 
-                // if(((ptr[j] <= bavra[2*j]) | (ptr[j] >=bavra[2*j+1])) & nocha[j]) {
-                  if((ptr[j] != bav[j]) & nocha[j]) {
+                if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
+                //  if((ptr[j] != bav[j]) & nocha[j]) {
                     lsci[j].hb=y;
                     nocha[j]=0;
                 }
@@ -209,8 +209,8 @@ out1: for(i=0;i<3;++i)
           for (x=0; x<w; x++) {
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
-                  // if(((ptr[j] <= bavra[2*j]) | (ptr[j] >=bavra[2*j+1])) & nocha[j]) {
-                  if((ptr[j] != bav[j]) & nocha[j]) {
+                  if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
+                  // if((ptr[j] != bav[j]) & nocha[j]) {
                       lsci[j].he=y;
                       nocha[j]=0;
                   }
@@ -253,8 +253,7 @@ out2: for(i=0;i<3;++i)
           for (x=0; x<w; x++) {
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
-                  // if(((ptr[j] <= bavra[2*j]) | (ptr[j] >=bavra[2*j+1])) & nocha[j]) {
-                  if((ptr[j] != bav[j]) & nocha[j]) {
+                  if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
                       lsci[j].h1[y-fir]=x;
                       if(lsci[j].vb>x)
                           lsci[j].vb=x; /* looking for the smallest value of x from the left */
@@ -274,8 +273,7 @@ out2: for(i=0;i<3;++i)
           for (x=w-1; x>=0; --x) {
               ptr = &(row[x*3]);
               for(j=0;j<3;++j) 
-                  // if(((ptr[j] <= bavra[2*j]) | (ptr[j] >=bavra[2*j+1])) & nocha[j]) {
-                  if((ptr[j] != bav[j]) & nocha[j]) {
+                  if(((ptr[j] < bavra[2*j]) | (ptr[j] > bavra[2*j+1])) & nocha[j]) {
                       lsci[j].h2[y-fir]=x;
                       if(lsci[j].ve<x)
                           lsci[j].ve=x; /* looking for the highest value of x from the left */
@@ -319,7 +317,7 @@ out2: for(i=0;i<3;++i)
           memset(nocha, 1, 3*sizeof(unsigned char));
           for (y=0; y<h; y++) {
               for(j=0;j<3;++j) 
-                  if((row_ptrs[y][x*3+j] != bav[j]) & nocha[j]) {
+                  if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
                       lsci[j].v1[x-fic]=y;
                       nocha[j]=0;
                   }
@@ -335,7 +333,7 @@ out2: for(i=0;i<3;++i)
           memset(nocha, 1, 3*sizeof(unsigned char));
           for (y=h-1; y>=0; --y) {
               for(j=0;j<3;++j) 
-                  if((row_ptrs[y][x*3+j] != bav[j]) & nocha[j]) {
+                  if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
                       lsci[j].v2[x-fic]=y;
                       nocha[j]=0;
                   }
@@ -474,6 +472,14 @@ out2: for(i=0;i<3;++i)
       for(i=0;i<wid4rays;++i) 
           printf("%d:%d ", pp[ppoffsett+2*i], pp[ppoffsett+2*i+1]); 
       printf("\n"); 
+#endif
+#ifdef DBG
+      printf("First few of LHS:\n"); 
+      for(i=0;i<20;++i) 
+          printf("%d:%d ", pp[2*i], pp[2*i+1]); 
+      printf("\nFirst few of BTM:\n"); 
+      for(i=0;i<wid4rays;++i) 
+          printf("%d:%d ", pp[ppoffsetb+2*i], pp[ppoffsetb+2*i+1]); 
 #endif
       /* free-up stuff */
       for(i=0;i<3;++i) {
