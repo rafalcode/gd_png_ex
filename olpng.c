@@ -173,6 +173,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
     printf("\n"); 
     unsigned char *nocha=malloc(3*sizeof(unsigned char));
     memset(nocha, 1, 3*sizeof(unsigned char));
+    int fir, lar, fic, lac;
 
 #ifdef DBG2
     printf("bavs: ");
@@ -190,310 +191,316 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
             ptr = &(row[x*3]);
             for(j=0;j<3;++j) 
                 if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
-                //  if((ptr[j] != bav[j]) & nocha[j]) {
                     lsci[j].hb=y;
                     nocha[j]=0;
                 }
             if( !nocha[0] & !nocha[1] & !nocha[2])
-                goto out1;
+                goto o1;
         }
     }
-out1: for(i=0;i<3;++i) 
-          printf("lbi=%d; ", lsci[i].hb);
-      printf("\n"); 
+o1:
+    for(i=0;i<3;++i) 
+        nocha[i]=1;
+    for (y=h-1; y>=0; --y) {
+        row = row_ptrs[y];
+        for (x=0; x<w; x++) {
+            ptr = &(row[x*3]);
+            for(j=0;j<3;++j) 
+                if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
+                    lsci[j].he=y;
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                goto o2;
+        }
+    }
+o2:
+    /* at this point we have to choose between the 3 starting and 3 ending indices*/
+    /* choose max of former and min of latter */
+    fir=lsci[0].hb;
+    lar=lsci[0].he /* last row with stopval*/;
+    for(i=1;i<3;++i) {
+        if(lsci[i].hb>fir)
+            fir=lsci[i].hb;
+        if(lsci[i].he<lar)
+            lar=lsci[i].he;
+    }
+    printf("fir:%d, lar:%d\n", fir, lar); 
+    int hei4rays=lar-fir+1;
+    for(i=0;i<3;++i) 
+        lsci[i].h1=malloc(hei4rays*sizeof(int));
 
-      for(i=0;i<3;++i) 
-          nocha[i]=1;
-      for (y=h-1; y>=0; --y) {
-          row = row_ptrs[y];
-          for (x=0; x<w; x++) {
-              ptr = &(row[x*3]);
-              for(j=0;j<3;++j) 
-                  if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
-                  // if((ptr[j] != bav[j]) & nocha[j]) {
-                      lsci[j].he=y;
-                      nocha[j]=0;
-                  }
-              if( !nocha[0] & !nocha[1] & !nocha[2])
-                  goto out2;
-          }
-      }
-out2: for(i=0;i<3;++i) 
+    /* first from the first side (i.e. left */
+    /* but we also - by stealth - get our vb and ve values */
+    for(j=0;j<3;++j) {
+        lsci[j].vb=0x7FFFFFFF;
+        lsci[j].ve=0;
+
+    }
+    for (y=fir; y<=lar; y++) {
+        row = row_ptrs[y];
+        memset(nocha, 1, 3*sizeof(unsigned char));
+        for (x=0; x<w; x++) {
+            ptr = &(row[x*3]);
+            for(j=0;j<3;++j) 
+                if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
+                    lsci[j].h1[y-fir]=x;
+                    if(lsci[j].vb>x)
+                        lsci[j].vb=x; /* looking for the smallest value of x from the left */
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                break; /* i.e. go to next row */
+        }
+    }
+
+    /* second from the second horizontal side (i.e. right */
+    for(i=0;i<3;++i) 
+        lsci[i].h2=malloc((lar-fir+1)*sizeof(int));
+    for (y=fir; y<=lar; y++) {
+        row = row_ptrs[y];
+        memset(nocha, 1, 3*sizeof(unsigned char));
+        for (x=w-1; x>=0; --x) {
+            ptr = &(row[x*3]);
+            for(j=0;j<3;++j) 
+                if(((ptr[j] < bavra[2*j]) | (ptr[j] > bavra[2*j+1])) & nocha[j]) {
+                    lsci[j].h2[y-fir]=x;
+                    if(lsci[j].ve<x)
+                        lsci[j].ve=x; /* looking for the highest value of x from the left */
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                break; /* i.e. go to next row */
+        }
+    }
 #ifdef DBG2
-          printf("lei=%d; ", lsci[i].he);
-      printf("\n"); 
-#else
-      ;
+    printf("Listing rownum:rl/gl/bl-rr/gr/br (row stop points from left-right:\n"); 
+    for(i=0;i<lar-fir+1;++i) {
+        printf("%d:", i+fir);
+        for(j=0;j<3;++j) 
+            printf((j==2)?"%d":"%d/", lsci[j].h1[i]);
+        printf("-"); 
+        for(j=0;j<3;++j) 
+            printf((j==2)?"%d":"%d/", lsci[j].h2[i]);
+        printf(" "); 
+    }
+    printf("\n"); 
 #endif
 
-      /* at this point we have to choose between the 3 starting and 3 ending indices*/
-      /* choose max of former and min of latter */
-      int fir=lsci[0].hb /* first row with stopval */, lar=lsci[0].he /* last row with stopval*/;
-      for(i=1;i<3;++i) {
-          if(lsci[i].hb>fir)
-              fir=lsci[i].hb;
-          if(lsci[i].he<lar)
-              lar=lsci[i].he;
-      }
-      printf("fir:%d, lar:%d\n", fir, lar); 
-      int hei4rays=lar-fir+1;
-      for(i=0;i<3;++i) 
-          lsci[i].h1=malloc(hei4rays*sizeof(int));
+    /* having done from left and right, you may have noticed that we got ve and vb in the process */
+    fic=lsci[0].vb /* first column with stopval */;
+    lac=lsci[0].ve /* last column with stopval*/;
+    for(i=1;i<3;++i) {
+        if(lsci[i].vb>fic)
+            fic=lsci[i].vb;
+        if(lsci[i].ve<lac)
+            lac=lsci[i].ve;
+    }
+    printf("fic:%d, lac:%d\n", fic, lac); 
+    int wid4rays/* width for rays*/=lac-fic+1;
+    int *pp=malloc((4*hei4rays+4*wid4rays)*sizeof(int));
 
-      /* first from the first side (i.e. left */
-      /* but we also - by stealth - get our vb and ve values */
-      for(j=0;j<3;++j) {
-          lsci[j].vb=0x7FFFFFFF;
-          lsci[j].ve=0;
+    /* capture stopvals from top */
+    for(i=0;i<3;++i) 
+        lsci[i].v1=malloc(wid4rays*sizeof(int));
 
-      }
-      for (y=fir; y<=lar; y++) {
-          row = row_ptrs[y];
-          memset(nocha, 1, 3*sizeof(unsigned char));
-          for (x=0; x<w; x++) {
-              ptr = &(row[x*3]);
-              for(j=0;j<3;++j) 
-                  if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
-                      lsci[j].h1[y-fir]=x;
-                      if(lsci[j].vb>x)
-                          lsci[j].vb=x; /* looking for the smallest value of x from the left */
-                      nocha[j]=0;
-                  }
-              if( !nocha[0] & !nocha[1] & !nocha[2])
-                  break; /* i.e. go to next row */
-          }
-      }
+    for (x=fic; x<=lac; x++) {
+        memset(nocha, 1, 3*sizeof(unsigned char));
+        for (y=0; y<h; y++) {
+            for(j=0;j<3;++j) 
+                if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
+                    lsci[j].v1[x-fic]=y;
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                break; /* i.e. go to next column */
+        }
+    }
+    /* capture stopvals from bottom */
+    for(i=0;i<3;++i) 
+        lsci[i].v2=malloc(wid4rays*sizeof(int));
 
-      /* second from the second horizontal side (i.e. right */
-      for(i=0;i<3;++i) 
-          lsci[i].h2=malloc((lar-fir+1)*sizeof(int));
-      for (y=fir; y<=lar; y++) {
-          row = row_ptrs[y];
-          memset(nocha, 1, 3*sizeof(unsigned char));
-          for (x=w-1; x>=0; --x) {
-              ptr = &(row[x*3]);
-              for(j=0;j<3;++j) 
-                  if(((ptr[j] < bavra[2*j]) | (ptr[j] > bavra[2*j+1])) & nocha[j]) {
-                      lsci[j].h2[y-fir]=x;
-                      if(lsci[j].ve<x)
-                          lsci[j].ve=x; /* looking for the highest value of x from the left */
-                      nocha[j]=0;
-                  }
-              if( !nocha[0] & !nocha[1] & !nocha[2])
-                  break; /* i.e. go to next row */
-          }
-      }
+    for (x=fic; x<=lac; x++) {
+        memset(nocha, 1, 3*sizeof(unsigned char));
+        for (y=h-1; y>=0; --y) {
+            for(j=0;j<3;++j) 
+                if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
+                    lsci[j].v2[x-fic]=y;
+                    nocha[j]=0;
+                }
+            if( !nocha[0] & !nocha[1] & !nocha[2])
+                break; /* i.e. go to next column */
+        }
+    }
 #ifdef DBG2
-      printf("Listing rownum:rl/gl/bl-rr/gr/br (row stop points from left-right:\n"); 
-      for(i=0;i<lar-fir+1;++i) {
-          printf("%d:", i+fir);
-          for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", lsci[j].h1[i]);
-          printf("-"); 
-          for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", lsci[j].h2[i]);
-          printf(" "); 
-      }
-      printf("\n"); 
+    printf("Listing colnum:rt/gt/bt-rb/gb/bb (row stop points from top-bottom:\n"); 
+    for(i=0;i<wid4rays;++i) {
+        printf("%d:", i+fic);
+        for(j=0;j<3;++j) 
+            printf((j==2)?"%d":"%d/", lsci[j].v1[i]);
+        printf("-"); 
+        for(j=0;j<3;++j) 
+            printf((j==2)?"%d":"%d/", lsci[j].v2[i]);
+        printf(" "); 
+    }
+    printf("\n"); 
 #endif
+    /* SETTING PIXELS STAGE */
+    /* OK, we have our information, now  we can set the background to anything we want */
+    /* first off, right to first stop val, left to last stopval */
+    /* temp fir and temp lar, useful for vert ops */
+    // int vfic, vlac; /* Very first ir, very last row */
+    // int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
+    int tfic, tlac; /* temporary first and last column */
+    int tfir, tlar;
+    int xx, yy;
+    int ppoffsetr=2*hei4rays + 2*wid4rays; /* for rhs */
+    int ppoffsett=4*hei4rays + 2*wid4rays; /*for top */
+    int ppoffsetb=2*hei4rays; /* for bottom */
+    unsigned full64n=(wid4rays-1)/64; /* number of full 64 unsigned long's are being used */
+    unsigned long *tmsk/*top mask*/=calloc(1+full64n, sizeof(unsigned long));
+    unsigned long *bmsk/*bottom mask*/=calloc(1+full64n, sizeof(unsigned long));
+    for (y=0; y<h; y++) {
+        if( (y<fir) | (y>lar) ) {
+            for (x=0; x<w; x++)
+                for(j=0;j<3;++j) 
+                    row_ptrs[y][3*x+j] = 128;
+        } else {
+            /* choose between colors */
+            tfic=lsci[0].h1[y-fir];
+            tlac=lsci[0].h2[y-fir];
+            for(i=1;i<3;++i) {
+                if(lsci[i].h1[y-fir]>tfic)
+                    tfic=lsci[i].h1[y-fir];
+                if(lsci[i].h2[y-fir]<tlac)
+                    tlac=lsci[i].h2[y-fir];
+            }
+            for (x=0; x<tfic; x++)
+                for(j=0;j<3;++j) 
+                    row_ptrs[y][3*x+j] = 128;
+            pp[2*(y-fir)]=tfic; /* no offset needed for the first one */
+            pp[2*(y-fir)+1]=y;
 
-      /* having done from left and right, you may have noticed that we got ve and vb in the process */
-      int fic=lsci[0].vb /* first column with stopval */, lac=lsci[0].ve /* last column with stopval*/;
-      for(i=1;i<3;++i) {
-          if(lsci[i].vb>fic)
-              fic=lsci[i].vb;
-          if(lsci[i].ve<lac)
-              lac=lsci[i].ve;
-      }
-      printf("fic:%d, lac:%d\n", fic, lac); 
-      int wid4rays/* width for rays*/=lac-fic+1;
-      int *pp=malloc((4*hei4rays+4*wid4rays)*sizeof(int));
+            for (x=w-1; x>tlac; --x)
+                for(j=0;j<3;++j) 
+                    row_ptrs[y][3*x+j] = 128;
+            pp[ppoffsetr+2*(y-fir)]=tlac;
+            pp[ppoffsetr+2*(y-fir)+1]=y;
 
-      /* capture stopvals from top */
-      for(i=0;i<3;++i) 
-          lsci[i].v1=malloc(wid4rays*sizeof(int));
+            /* now we're also going to ray down the columns */
+            for (x=tfic; x<=tlac; x++) {
+                xx=x-fic; /* not the temp fic no*/
+                if( tmsk[xx/64] & (1UL<<(xx%64)) ) /* check */
+                    continue;
+                /* PUT IN HERE: COLUMN RAY CODE */
+                tfir=lsci[0].v1[xx]; /* the first row for this x */
+                for(i=1;i<3;++i) {
+                    if(lsci[i].v1[xx]>tfir)
+                        tfir=lsci[i].v1[xx];
+                }
+                for (yy=fir; yy<=tfir; yy++)
+                    for(j=0;j<3;++j) 
+                        row_ptrs[yy][3*x+j] = 128;
 
-      for (x=fic; x<=lac; x++) {
-          memset(nocha, 1, 3*sizeof(unsigned char));
-          for (y=0; y<h; y++) {
-              for(j=0;j<3;++j) 
-                  if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
-                      lsci[j].v1[x-fic]=y;
-                      nocha[j]=0;
-                  }
-              if( !nocha[0] & !nocha[1] & !nocha[2])
-                  break; /* i.e. go to next column */
-          }
-      }
-      /* capture stopvals from bottom */
-      for(i=0;i<3;++i) 
-          lsci[i].v2=malloc(wid4rays*sizeof(int));
+                tmsk[xx/64] |= 1UL<<(xx%64); /* set */
+                pp[ppoffsett+2*xx]=x;
+                pp[ppoffsett+2*xx+1]=tfir;
 
-      for (x=fic; x<=lac; x++) {
-          memset(nocha, 1, 3*sizeof(unsigned char));
-          for (y=h-1; y>=0; --y) {
-              for(j=0;j<3;++j) 
-                  if(((row_ptrs[y][x*3+j] < bavra[2*j]) | (row_ptrs[y][x*3+j] > bav[2*j+1])) & nocha[j]) {
-                      lsci[j].v2[x-fic]=y;
-                      nocha[j]=0;
-                  }
-              if( !nocha[0] & !nocha[1] & !nocha[2])
-                  break; /* i.e. go to next column */
-          }
-      }
-#ifdef DBG2
-      printf("Listing colnum:rt/gt/bt-rb/gb/bb (row stop points from top-bottom:\n"); 
-      for(i=0;i<wid4rays;++i) {
-          printf("%d:", i+fic);
-          for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", lsci[j].v1[i]);
-          printf("-"); 
-          for(j=0;j<3;++j) 
-              printf((j==2)?"%d":"%d/", lsci[j].v2[i]);
-          printf(" "); 
-      }
-      printf("\n"); 
-#endif
-      /* SETTING PIXELS STAGE */
-      /* OK, we have our information, now  we can set the background to anything we want */
-      /* first off, right to first stop val, left to last stopval */
-      /* temp fir and temp lar, useful for vert ops */
-      // int vfic, vlac; /* Very first ir, very last row */
-      // int cfic, clac; /* Current fir and lar, temporary, but their last values will be re-used */
-      int tfic, tlac; /* temporary first and last column */
-      int tfir, tlar;
-      int xx, yy;
-      int ppoffsetr=2*hei4rays + 2*wid4rays; /* for rhs */
-      int ppoffsett=4*hei4rays + 2*wid4rays; /*for top */
-      int ppoffsetb=2*hei4rays; /* for bottom */
-      unsigned full64n=(wid4rays-1)/64; /* number of full 64 unsigned long's are being used */
-      unsigned long *tmsk/*top mask*/=calloc(1+full64n, sizeof(unsigned long));
-      unsigned long *bmsk/*bottom mask*/=calloc(1+full64n, sizeof(unsigned long));
-      for (y=0; y<h; y++) {
-          if( (y<fir) | (y>lar) ) {
-              for (x=0; x<w; x++)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-          } else {
-              /* choose between colors */
-              tfic=lsci[0].h1[y-fir];
-              tlac=lsci[0].h2[y-fir];
-              for(i=1;i<3;++i) {
-                  if(lsci[i].h1[y-fir]>tfic)
-                      tfic=lsci[i].h1[y-fir];
-                  if(lsci[i].h2[y-fir]<tlac)
-                      tlac=lsci[i].h2[y-fir];
-              }
-              for (x=0; x<tfic; x++)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-              pp[2*(y-fir)]=tfic; /* no offset needed for the first one */
-              pp[2*(y-fir)+1]=y;
+            }
+        }
+    }
+    /* now we starting from the bottom */
+    for (y=lar; y>=fir; --y) {
+        /* choose between colors */
+        tfic=lsci[0].h1[y-fir];
+        tlac=lsci[0].h2[y-fir];
+        for(i=1;i<3;++i) {
+            if(lsci[i].h1[y-fir]>tfic)
+                tfic=lsci[i].h1[y-fir];
+            if(lsci[i].h2[y-fir]<tlac)
+                tlac=lsci[i].h2[y-fir];
+        }
+        for (x=tfic; x<=tlac; x++) {
+            xx=x-fic; /* not the temp fic no*/
+            if( bmsk[xx/64] & (1UL<<(xx%64)) ) /* check */
+                continue;
+            /* PUT IN HERE: COLUMN RAY CODE */
+            tlar=lsci[0].v2[xx];
+            for(i=1;i<3;++i) {
+                if(lsci[i].v2[xx]<tlar)
+                    tlar=lsci[i].v2[xx];
+            }
+            for (yy=lar; yy>=tlar; --yy)
+                for(j=0;j<3;++j) 
+                    row_ptrs[yy][3*x+j] = 128;
 
-              for (x=w-1; x>tlac; --x)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[y][3*x+j] = 128;
-              pp[ppoffsetr+2*(y-fir)]=tlac;
-              pp[ppoffsetr+2*(y-fir)+1]=y;
-
-              /* now we're also going to ray down the columns */
-              for (x=tfic; x<=tlac; x++) {
-                  xx=x-fic; /* not the temp fic no*/
-                  if( tmsk[xx/64] & (1UL<<(xx%64)) ) /* check */
-                      continue;
-                  /* PUT IN HERE: COLUMN RAY CODE */
-                  tfir=lsci[0].v1[xx]; /* the first row for this x */
-                  for(i=1;i<3;++i) {
-                      if(lsci[i].v1[xx]>tfir)
-                          tfir=lsci[i].v1[xx];
-                  }
-                  for (yy=fir; yy<=tfir; yy++)
-                      for(j=0;j<3;++j) 
-                          row_ptrs[yy][3*x+j] = 128;
-
-                  tmsk[xx/64] |= 1UL<<(xx%64); /* set */
-                  pp[ppoffsett+2*xx]=x;
-                  pp[ppoffsett+2*xx+1]=tfir;
-
-              }
-          }
-      }
-      /* now we starting from the bottom */
-      for (y=lar; y>=fir; --y) {
-          /* choose between colors */
-          tfic=lsci[0].h1[y-fir];
-          tlac=lsci[0].h2[y-fir];
-          for(i=1;i<3;++i) {
-              if(lsci[i].h1[y-fir]>tfic)
-                  tfic=lsci[i].h1[y-fir];
-              if(lsci[i].h2[y-fir]<tlac)
-                  tlac=lsci[i].h2[y-fir];
-          }
-          for (x=tfic; x<=tlac; x++) {
-              xx=x-fic; /* not the temp fic no*/
-              if( bmsk[xx/64] & (1UL<<(xx%64)) ) /* check */
-                  continue;
-              /* PUT IN HERE: COLUMN RAY CODE */
-              tlar=lsci[0].v2[xx];
-              for(i=1;i<3;++i) {
-                  if(lsci[i].v2[xx]<tlar)
-                      tlar=lsci[i].v2[xx];
-              }
-              for (yy=lar; yy>=tlar; --yy)
-                  for(j=0;j<3;++j) 
-                      row_ptrs[yy][3*x+j] = 128;
-
-              bmsk[xx/64] |= 1UL<<(xx%64); /* set */
-              pp[ppoffsetb+2*xx]=x;
-              pp[ppoffsetb+2*xx+1]=tlar;
-          }
-      }
+            bmsk[xx/64] |= 1UL<<(xx%64); /* set */
+            pp[ppoffsetb+2*xx]=x;
+            pp[ppoffsetb+2*xx+1]=tlar;
+        }
+    }
 
 #ifdef DBG2
-      printf("Print masks to see if they're getting fully filled:\n"); 
-      for(i=0;i<1+(wid4rays-1)/64; ++i)
-          printf("%lx  ", tmsk[i]); 
-      printf("\n"); 
-      for(i=0;i<1+(wid4rays-1)/64; ++i)
-          printf("%lx  ", bmsk[i]); 
-      printf("\n"); 
+    printf("Print masks to see if they're getting fully filled:\n"); 
+    for(i=0;i<1+(wid4rays-1)/64; ++i)
+        printf("%lx  ", tmsk[i]); 
+    printf("\n"); 
+    for(i=0;i<1+(wid4rays-1)/64; ++i)
+        printf("%lx  ", bmsk[i]); 
+    printf("\n"); 
 #endif
 #ifdef DBG2
-      printf("LHS:\n"); 
-      for(i=0;i<hei4rays;++i) 
-          printf("%d:%d ", pp[2*i], pp[2*i+1]); 
-      printf("\nBTM:\n"); 
-      for(i=0;i<wid4rays;++i) 
-          printf("%d:%d ", pp[ppoffsetb+2*i], pp[ppoffsetb+2*i+1]); 
-      printf("\nRHS:\n"); 
-      for(i=0;i<hei4rays;++i) 
-          printf("%d:%d ", pp[ppoffsetr+2*i], pp[ppoffsetr+2*i+1]); 
-      printf("\nTOP:\n"); 
-      for(i=0;i<wid4rays;++i) 
-          printf("%d:%d ", pp[ppoffsett+2*i], pp[ppoffsett+2*i+1]); 
-      printf("\n"); 
+    printf("LHS:\n"); 
+    for(i=0;i<hei4rays;++i) 
+        printf("%d:%d ", pp[2*i], pp[2*i+1]); 
+    printf("\nBTM:\n"); 
+    for(i=0;i<wid4rays;++i) 
+        printf("%d:%d ", pp[ppoffsetb+2*i], pp[ppoffsetb+2*i+1]); 
+    printf("\nRHS:\n"); 
+    for(i=0;i<hei4rays;++i) 
+        printf("%d:%d ", pp[ppoffsetr+2*i], pp[ppoffsetr+2*i+1]); 
+    printf("\nTOP:\n"); 
+    for(i=0;i<wid4rays;++i) 
+        printf("%d:%d ", pp[ppoffsett+2*i], pp[ppoffsett+2*i+1]); 
+    printf("\n"); 
+#endif
+#ifdef DBG2
+    printf("First few of LHS. vs BTM:\n"); 
+    for(j=0;j<hei4rays/24-1;++j) {
+        for(i=0;i<24;++i) 
+            printf("%d:%d ", pp[24*j+2*i], pp[24*j+2*i+1]); 
+        printf("\n"); 
+        for(i=0;i<24;++i) 
+            printf("%d:%d ", pp[ppoffsetb+24*j+2*i], pp[ppoffsetb+24*j+2*i+1]); 
+        printf("\n"); 
+    }
 #endif
 #ifdef DBG
-      printf("First few of LHS:\n"); 
-      for(i=0;i<20;++i) 
-          printf("%d:%d ", pp[2*i], pp[2*i+1]); 
-      printf("\nFirst few of BTM:\n"); 
-      for(i=0;i<wid4rays;++i) 
-          printf("%d:%d ", pp[ppoffsetb+2*i], pp[ppoffsetb+2*i+1]); 
+    printf("Go to fic:fir first and follow t few of LHS. vs BTM:\n"); 
+    int k=0;
+    // while( (pp[2*k]!=fic) & (pp[2*k+1] != fir) )
+    while( (pp[2*k]!=fic) )
+        k++;
+    for(j=k;j<k+24;++j)
+        printf("%d:%d ", pp[2*j], pp[2*j+1]); 
+    printf("\n"); 
+    for(j=0;j<24;++j)
+        printf("%d:%d ", pp[ppoffsetb+2*j], pp[ppoffsetb+2*j+1]); 
+    printf("\n"); 
 #endif
-      /* free-up stuff */
-      for(i=0;i<3;++i) {
-          free(lsci[i].h1);
-          free(lsci[i].h2);
-          free(lsci[i].v1);
-          free(lsci[i].v2);
-      }
-      free(tmsk);
-      free(bmsk);
-      free(pp);
-      free(lsci);
-      free(nocha);
-      return;
+    /* free-up stuff */
+    for(i=0;i<3;++i) {
+        free(lsci[i].h1);
+        free(lsci[i].h2);
+        free(lsci[i].v1);
+        free(lsci[i].v2);
+    }
+    free(tmsk);
+    free(bmsk);
+    free(pp);
+    free(lsci);
+    free(nocha);
+    return;
 }
 
 int main(int argc, char **argv)
