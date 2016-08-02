@@ -18,7 +18,7 @@ cotten: cotten.c
 chapng: chapng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
-# outlines in pngs: prepareation for eigenimages
+# outlines in pngs: preparation for eigenimages
 olpng: olpng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 olpng_d: olpng.c
