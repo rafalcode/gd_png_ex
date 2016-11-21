@@ -1,0 +1,320 @@
+   GraphicMagick logo GraphicsMagick _________________________  Search
+
+     * [1]Home
+     * [2]Project
+     * [3]Download
+     * [4]Install
+     * [5]Source
+     * [6]News
+     * [7]Utilities
+     * [8]Programming
+     * [9]Reference
+
+GraphicsMagick Core C API
+
+   The GraphicsMagick core C library constitutes the implementation of
+   GraphicsMagick and provides the lowest-level C language programming
+   interface for GraphicsMagick. The core C API provides many functions to
+   read, manipulate, write, or display an image. To invoke the functions,
+   write your program in C (or C++) language while making calls to the
+   core library functions and link with libGraphicsMagick.a,
+   libGraphicsMagick.so, or GraphicsMagick.dll depending on your system.
+
+   The API is divided into a number of categories. While reading this
+   documentation, please reference the [10]types documentation as
+   required:
+
+     * [11]Animate: Interactively animate an image sequence
+     * [12]Annotate: Annotate an image with text
+     * [13]Attribute: Access key, value image attributes
+     * [14]Average: Average several images together
+     * [15]ASC CDL : Apply ASC CDL to image
+     * [16]Blob: Read and write images to memory
+     * [17]Channel: Import and export image channels as well as compute
+       channel depth
+     * [18]Color: Methods to deal with image colors
+     * [19]Colormap: Methods to deal with image colormaps
+     * [20]Compare: Compare images
+     * [21]Composite: Composite images
+     * [22]Confirm Access : Confirm access to files and URLs.
+     * [23]Constitute: Read, write, import, and export images
+     * [24]Decorate: Add fancy borders to images
+     * [25]Describe: Describe an image
+     * [26]Display: Interactively display and edit an image
+     * [27]Draw: Convenient methods to draw vectors and text
+     * [28]Effect:Threshold (various), blur, despeckle, edge, emboss,
+       enhance, gaussian blur ...
+     * [29]Enhance: Contrast, equalize, gamma, level, level channel,
+       modulate, negate, and normalize
+     * [30]Error: Error reporting methods
+     * [31]Export : Export image pixels to common representations
+     * [32]FX: Special effects methods
+     * [33]Hald CLUT : Apply Hald CLUT to image
+     * [34]Image: Miscellaneous image methods
+     * [35]Import : Import image pixels from common representations
+     * [36]List: Manage image lists
+     * [37]Magick: Image format support interfaces
+     * [38]Memory: Memory allocation methods
+     * [39]Monitor: Progress monitor callbacks
+     * [40]Montage: Create a montage of image thumbnails
+     * [41]Operator: Methods to apply mathematic or boolean operators to
+       pixels
+     * [42]Paint: Fill pixel regions
+     * [43]Pixel Cache: Low-level access to image pixels
+     * [44]Pixel Iterator: Pixel iterator design pattern support functions
+     * [45]Plasma: Plasma fractal image generator
+     * [46]Profile: Attached profile access
+     * [47]Quantize: Reduce image colors or assign image colors from
+       colormap
+     * [48]Registry: Store and retrieve images in memory by ID
+     * [49]Resize: Resize an Image
+     * [50]Resource: Set and get resource limits
+     * [51]Segment: Coalese similar image colors
+     * [52]Shear: Rotate image, shear image, or apply a 2D affine
+       transformation
+     * [53]Signature: Compute an image signature (checksum)
+     * [54]Statistics: Compute image statistics
+     * [55]Texture: Create a tiled texture image or tile an image with a
+       texture.
+     * [56]Transform: Chop, coalesce, deconstruct, flatten, flip, flop,
+       mosiac, roll, or shave image
+
+   Here are a few sample programs to get you started.
+
+   This example program (convert.c) simply converts from one file name to
+   another (and will automatically change formats based on file
+   extension):
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/types.h>
+#include <magick/api.h>
+
+int main ( int argc, char **argv )
+{
+  Image
+    *image = (Image *) NULL;
+
+  char
+    infile[MaxTextExtent],
+    outfile[MaxTextExtent];
+
+  int
+    arg = 1,
+    exit_status = 0;
+
+  ImageInfo
+    *imageInfo;
+
+  ExceptionInfo
+    exception;
+
+  InitializeMagick(NULL);
+  imageInfo=CloneImageInfo(0);
+  GetExceptionInfo(&exception);
+
+  if (argc != 3)
+    {
+      (void) fprintf ( stderr, "Usage: %s infile outfile\n", argv[0] );
+      (void) fflush(stderr);
+      exit_status = 1;
+      goto program_exit;
+    }
+
+  (void) strncpy(infile, argv[arg], MaxTextExtent-1 );
+  arg++;
+  (void) strncpy(outfile, argv[arg], MaxTextExtent-1 );
+
+  (void) strcpy(imageInfo->filename, infile);
+  image = ReadImage(imageInfo, &exception);
+  if (image == (Image *) NULL)
+    {
+      CatchException(&exception);
+      exit_status = 1;
+      goto program_exit;
+    }
+
+  (void) strcpy(image->filename, outfile);
+  if (!WriteImage (imageInfo,image))
+    {
+      CatchException(&image->exception);
+      exit_status = 1;
+      goto program_exit;
+    }
+
+ program_exit:
+
+  if (image != (Image *) NULL)
+    DestroyImage(image);
+
+  if (imageInfo != (ImageInfo *) NULL)
+    DestroyImageInfo(imageInfo);
+  DestroyMagick();
+
+  return exit_status;
+}
+
+   This example program (demo.c) which reads multiple input files
+   (possibly animation files) specified on the command line, resizes the
+   image frames to 106x80, and writes the resulting animation to disk:
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <sys/types.h>
+#include <magick/api.h>
+
+int main(int argc,char **argv)
+{
+  ExceptionInfo
+    exception;
+
+  Image
+    *image,
+    *images,
+    *resize_image,
+    *thumbnails;
+
+  ImageInfo
+    *image_info;
+
+  int
+    i;
+
+  /*
+    Initialize the image info structure and read the list of files
+    provided by the user as a image sequence
+  */
+  InitializeMagick(*argv);
+  GetExceptionInfo(&exception);
+  image_info=CloneImageInfo((ImageInfo *) NULL);
+  images=NewImageList();
+  for (i=1; i< argc-1; i++)
+    {
+      (void) strcpy(image_info->filename,argv[i]);
+      printf("Reading %s ...", image_info->filename);
+      image=ReadImage(image_info,&exception);
+      printf(" %lu frames\n", GetImageListLength(image));
+      if (exception.severity != UndefinedException)
+        CatchException(&exception);
+      if (image)
+        (void) AppendImageToList(&images,image);
+    }
+
+  if (!images)
+    {
+      printf("Failed to read any images!\n");
+      exit(1);
+    }
+  /*
+    Create a thumbnail image sequence
+  */
+  thumbnails=NewImageList();
+  while ((image=RemoveFirstImageFromList(&images)) != (Image *) NULL)
+    {
+      resize_image=ResizeImage(image,106,80,LanczosFilter,1.0,&exception);
+      DestroyImage(image);
+      if (resize_image == (Image *) NULL)
+        {
+          CatchException(&exception);
+          continue;
+        }
+      (void) AppendImageToList(&thumbnails,resize_image);
+    }
+  /*
+    Write the thumbnail image sequence to file
+  */
+  if (thumbnails)
+    {
+      (void) strcpy(thumbnails->filename,argv[argc-1]);
+      image_info->adjoin=MagickTrue;
+      printf("Writing %s ... %lu frames\n", thumbnails->filename,
+             GetImageListLength(thumbnails));
+      WriteImage(image_info,thumbnails);
+    }
+
+  /*
+    Release resources
+  */
+  DestroyImageList(thumbnails);
+  DestroyImageInfo(image_info);
+  DestroyExceptionInfo(&exception);
+  DestroyMagick();
+  return(0);
+}
+
+   To compile on Unix, the command would look something like this:
+gcc -o demo demo.c -O `GraphicsMagick-config --cppflags --ldflags --libs`
+
+   As a usage example, with the input files in1.gif, in2.png, and in3.jpg,
+   create the animation file out.miff:
+demo in1.gif in2.png in3.jpg out.miff
+
+   The resulting animation may be played on an X11 display using 'gm
+   animate out.miff'.
+
+   The GraphicsMagick-config script reproduces the options which were used
+   to compile the GraphicsMagick utilities. Using compatible options
+   ensures that your program will compile and run.
+     __________________________________________________________________
+
+   Copyright © GraphicsMagick Group 2002 - 2015
+
+Referenser
+
+   1. http://www.graphicsmagick.org/index.html
+   2. http://www.graphicsmagick.org/project.html
+   3. http://www.graphicsmagick.org/download.html
+   4. http://www.graphicsmagick.org/README.html
+   5. http://www.graphicsmagick.org/Hg.html
+   6. http://www.graphicsmagick.org/NEWS.html
+   7. http://www.graphicsmagick.org/utilities.html
+   8. http://www.graphicsmagick.org/programming.html
+   9. http://www.graphicsmagick.org/reference.html
+  10. http://www.graphicsmagick.org/api/types.html
+  11. http://www.graphicsmagick.org/api/animate.html
+  12. http://www.graphicsmagick.org/api/annotate.html
+  13. http://www.graphicsmagick.org/api/attribute.html
+  14. http://www.graphicsmagick.org/api/average.html
+  15. http://www.graphicsmagick.org/api/cdl.html
+  16. http://www.graphicsmagick.org/api/blob.html
+  17. http://www.graphicsmagick.org/api/channel.html
+  18. http://www.graphicsmagick.org/api/color.html
+  19. http://www.graphicsmagick.org/api/colormap.html
+  20. http://www.graphicsmagick.org/api/compare.html
+  21. http://www.graphicsmagick.org/api/composite.html
+  22. http://www.graphicsmagick.org/api/confirm_access.html
+  23. http://www.graphicsmagick.org/api/constitute.html
+  24. http://www.graphicsmagick.org/api/decorate.html
+  25. http://www.graphicsmagick.org/api/describe.html
+  26. http://www.graphicsmagick.org/api/display.html
+  27. http://www.graphicsmagick.org/api/draw.html
+  28. http://www.graphicsmagick.org/api/effect.html
+  29. http://www.graphicsmagick.org/api/enhance.html
+  30. http://www.graphicsmagick.org/api/error.html
+  31. http://www.graphicsmagick.org/api/export.html
+  32. http://www.graphicsmagick.org/api/fx.html
+  33. http://www.graphicsmagick.org/api/hclut.html
+  34. http://www.graphicsmagick.org/api/image.html
+  35. http://www.graphicsmagick.org/api/import.html
+  36. http://www.graphicsmagick.org/api/list.html
+  37. http://www.graphicsmagick.org/api/magick.html
+  38. http://www.graphicsmagick.org/api/memory.html
+  39. http://www.graphicsmagick.org/api/monitor.html
+  40. http://www.graphicsmagick.org/api/montage.html
+  41. http://www.graphicsmagick.org/api/operator.html
+  42. http://www.graphicsmagick.org/api/paint.html
+  43. http://www.graphicsmagick.org/api/pixel_cache.html
+  44. http://www.graphicsmagick.org/api/pixel_iterator.html
+  45. http://www.graphicsmagick.org/api/plasma.html
+  46. http://www.graphicsmagick.org/api/profile.html
+  47. http://www.graphicsmagick.org/api/quantize.html
+  48. http://www.graphicsmagick.org/api/registry.html
+  49. http://www.graphicsmagick.org/api/resize.html
+  50. http://www.graphicsmagick.org/api/resource.html
+  51. http://www.graphicsmagick.org/api/segment.html
+  52. http://www.graphicsmagick.org/api/shear.html
+  53. http://www.graphicsmagick.org/api/signature.html
+  54. http://www.graphicsmagick.org/api/statistics.html
+  55. http://www.graphicsmagick.org/api/texture.html
+  56. http://www.graphicsmagick.org/api/transform.html

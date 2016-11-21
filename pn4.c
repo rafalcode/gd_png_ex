@@ -29,11 +29,10 @@ typedef struct
     int npasses;
 } dets_t;
 
-
 /* functs */
 void abort_(const char *s, ...)
 {
-	va_list args;// whoa there's a struct I've never heard of! STDARG!!!
+	va_list args; // variable args
 	va_start(args, s);
 	vfprintf(stderr, s, args);
 	fprintf(stderr, "\n");
@@ -93,7 +92,6 @@ dets_t *read_png_file(char* file_name, png_structp *pngptr, png_infop *infptr, p
     fclose(fp);
     return dets;
 }
-
 
 int main(int argc, char **argv)
 {

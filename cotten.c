@@ -96,7 +96,7 @@ void read_png_file(char* file_name)
 }
 
 
-void write_png_file(char* file_name)
+void write_png_file(char* file_name, int magn)
 {
     /* create file */
     FILE *fp = fopen(file_name, "wb");
@@ -124,8 +124,7 @@ void write_png_file(char* file_name)
     if (setjmp(png_jmpbuf(png_ptr)))
         abort_("[write_png_file] Error during writing header");
 
-    png_set_IHDR(png_ptr, info_ptr, width, height,
-            8, 6, PNG_INTERLACE_NONE,
+    png_set_IHDR(png_ptr, info_ptr, width, height, 8, 6, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
     png_write_info(png_ptr, info_ptr);
