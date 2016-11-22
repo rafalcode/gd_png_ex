@@ -146,18 +146,19 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
         abort_("[write_png_file] Error during writing bytes");
 
     /* row_ptrs2 */
-    png_bytep *row_ptrs2 = (png_bytep*) malloc(sizeof(png_bytep)*h2);
+    png_bytep *row_ptrs2 = malloc(sizeof(png_bytep)*h2);
     png_byte* row, row2;
-    for (y=0; y<(*h); y++)
+    for (y=0; y<(*h); y++) {
         row = row_ptrs[y];
-        for(i=0;i<magn;++i) {
-        row_ptrs2[magn*y+i] = (png_byte*) malloc(info_ptr->rowbytes);
-        row2 = row_ptrs2[magn*y+i];
         for (x=0; x<w; x++) {
             ptr = &(row[x*3]);
-            ptr2 = &(row2[x*3]);
-            for(j=0;j<3;++j) 
-            printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
+            for(i=0;i<magn;++i) {
+                row_ptrs2[magn*y+i] = (png_byte*) malloc(info_ptr->rowbytes);
+                row2 = row_ptrs2[magn*y+i];
+                ptr2 = &(row2[x*3]);
+                for(j=0;j<4;++j) 
+                    ptr[printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
+                    printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
 
 
 

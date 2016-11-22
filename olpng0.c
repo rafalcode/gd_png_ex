@@ -4,9 +4,6 @@
  * This software may be freely redistributed under the terms
  * of the X11 license.
  *
- * RFnotes: supposedly this is an easy test of libpng ...
- * but it isn't really , note hte three dots in the first function's arguments: WTF?
- * is that from stdarg.h?
  */
 
 #include <unistd.h>

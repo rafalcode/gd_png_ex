@@ -159,14 +159,13 @@ void process_file(void)
 		for (x=0; x<width; x++) {
 			png_byte* ptr = &(row[x*4]);
 			// next line commented out as it prints verbosely to STDOUT
-			// printf("Pixel at position [ %d - %d ] has the following RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
+			printf("Pixel at position [ %d - %d ] has the following RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
 
 			/* The processing now begins ... set red value to 0 and green value to the blue one */
 			ptr[0] = 0;
 			ptr[1] = ptr[2];
 		}
 	}
-
 }
 
 int main(int argc, char **argv)

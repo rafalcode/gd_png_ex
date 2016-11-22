@@ -146,7 +146,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
         for (x=0; x<w; x++) {
             ptr = row+x*3; /* jump in threes */
 #ifdef DBG
-            if (y==21)
+//            if (y==21)
                 printf("Pixel at position [ %d - %d ] has the following RGB values: %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2]);
 #endif
             /* The processing now begins ... set red value to 0 and green value to the blue one */

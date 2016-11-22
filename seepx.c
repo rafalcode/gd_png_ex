@@ -105,7 +105,7 @@ static void print_pixel(png_structp png_ptr, png_infop info_ptr, png_const_bytep
          return;
 
       case PNG_COLOR_TYPE_RGB:
-         printf("RGB %u %u %u\n", component(row, x, 0, bit_depth, 3),
+         printf("RGB (no alpha) %u %u %u\n", component(row, x, 0, bit_depth, 3),
             component(row, x, 1, bit_depth, 3),
             component(row, x, 2, bit_depth, 3));
          return;

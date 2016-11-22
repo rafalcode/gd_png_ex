@@ -18,7 +18,6 @@
 #define PNG_DEBUG 3
 #include <png.h>
 
-/* global vars */
 typedef struct /* infcntr: info container */
 {
     int w, h, rbytes;
@@ -116,8 +115,8 @@ void process_file(infcntr *infc)
     for (j=0; j<infc->h; j++) {
         crptr = infc->rpta[j];
         for (i=0; i<infc->w; i++) {
-            pdptr = &(crptr[i*4]);
-            if(j==100) {
+            pdptr = &(crptr[i*infc->nc]);
+            if(j==10) {
                 printf("Pixel at position [ %d - %d ] has RGBA values: ", i, j);
                 for(k=0;k<infc->nc;++k) 
                     printf("%d ", pdptr[k]);
@@ -142,7 +141,7 @@ int main(int argc, char **argv)
     read_png_file(argv[1], infc);
     printf("Inf: W=%d, H=%d, CT=%d, BD=%d, NC=%d\n", infc->w, infc->h, infc->ct, infc->bd, infc->nc); 
 
-    // process_file(infc);
+    process_file(infc);
 
     for (j=0; j<infc->h; j++)
         free(infc->rpta[j]);
