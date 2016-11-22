@@ -81,13 +81,16 @@ void read_png_file(char* file_name, infcntr *infc)
 
     /* work out interlace */
     infc->il= png_get_interlace_type(png_sptr, info_ptr);
-    if(infc->il==1)
+    // if(infc->il==1)
+    /* PNG_INTERLACE_NONE is 0 and PNG_INTERLACE_ADAM7 is 1 */
+    if(infc->il== PNG_INTERLACE_NONE)
         printf("Image is not interlaced.\n"); 
-    else {
+    else if(infc->il == PNG_INTERLACE_ADAM7) {
         printf("Image is interlaced.\n"); 
         infc->numpasses = png_set_interlace_handling(png_sptr); /* returns an int: 7 if interlaced, 1 if not */
         png_read_update_info(png_sptr, info_ptr);
-    }
+    } else
+        printf("Warning: Odd return from interlace inquiry.\n"); 
 
     /* read file */
     if (setjmp(png_jmpbuf(png_sptr)))
@@ -141,7 +144,7 @@ int main(int argc, char **argv)
     read_png_file(argv[1], infc);
     printf("Inf: W=%d, H=%d, CT=%d, BD=%d, NC=%d\n", infc->w, infc->h, infc->ct, infc->bd, infc->nc); 
 
-    process_file(infc);
+    // process_file(infc);
 
     for (j=0; j<infc->h; j++)
         free(infc->rpta[j]);

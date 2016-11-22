@@ -43,3 +43,8 @@ It appears that the RGBA values are held as a pointer at each pixel, i.e.
 As you can see you have the height and width but you have to dereference the value at a row element to give you
 the array.
 
+
+Interlacing and bitdepth
+OK so these are two esoteric aspects that you wouldn't normally think about at all in pngs
+but they're there ... they probab;y have their uses.
+Note how bitdepth of 16 demands twice the pixel memory (from exap.c)

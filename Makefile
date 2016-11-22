@@ -3,7 +3,7 @@ CFLAGS=-g -Wall
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4
+EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
@@ -34,6 +34,10 @@ exap: exap.c
 olpng: olpng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 olpng_d: olpng.c
+	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
+
+# proof of concept on the kronecker/magnific I'm trying to achieve
+kro: kro0.c
 	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
 
 # and behold Istart doing what I've alreay done.
