@@ -3,7 +3,7 @@ CFLAGS=-g -Wall
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro
+EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magn
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
@@ -40,6 +40,10 @@ olpng_d: olpng.c
 kro: kro0.c
 	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
 
+magn: magn.c
+	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
+
+# and behold Istart doing what I've alreay done.
 # and behold Istart doing what I've alreay done.
 pn4: pn4.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}

@@ -80,10 +80,10 @@ png_bytep *read_png_file(char* file_name, int *w, int *h, png_byte *color_type, 
 
     png_read_info(png_ptr, info_ptr);
 
-    *w = info_ptr->width;
-    *h = info_ptr->height;
-    *color_type = info_ptr->color_type;
-    *bit_depth = info_ptr->bit_depth;
+    *w = png_get_image_width(png_ptr, info_ptr);
+    *h = png_get_image_height(png_ptr, info_ptr);
+    *color_type = png_get_color_type(png_ptr, info_ptr);
+    *bit_depth = png_get_bit_depth(png_ptr, info_ptr);
 
     /* I think there's only two values here, and one is extremely common and the other is very unusual
        int number_of_passes = png_set_interlace_handling(png_ptr);
@@ -97,7 +97,7 @@ png_bytep *read_png_file(char* file_name, int *w, int *h, png_byte *color_type, 
     png_bytep *row_ptrs;
     row_ptrs = (png_bytep*) malloc(sizeof(png_bytep) * (*h));
     for (y=0; y<(*h); y++)
-        row_ptrs[y] = (png_byte*) malloc(info_ptr->rowbytes);
+        row_ptrs[y] = (png_byte*) malloc(png_get_rowbytes(png_ptr, info_ptr));
 
     png_read_image(png_ptr, row_ptrs);
 
@@ -120,6 +120,7 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
     png_infop info_ptr;
     int w2=magn*w;
     int h2=magn*h;
+    int i, j, x, y;
 
     /* initialize stuff */
     if( !(png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
@@ -147,20 +148,23 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
 
     /* row_ptrs2 */
     png_bytep *row_ptrs2 = malloc(sizeof(png_bytep)*h2);
-    png_byte* row, row2;
-    for (y=0; y<(*h); y++) {
+    png_byte *row, *row2, *ptr, *ptr2;
+    for (y=0; y<h; y++) {
         row = row_ptrs[y];
         for (x=0; x<w; x++) {
             ptr = &(row[x*3]);
-            for(i=0;i<magn;++i) {
-                row_ptrs2[magn*y+i] = (png_byte*) malloc(info_ptr->rowbytes);
-                row2 = row_ptrs2[magn*y+i];
-                ptr2 = &(row2[x*3]);
-                for(j=0;j<4;++j) 
-                    ptr[printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
-                    printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
-
-
+            for(j=0;j<magn;++j) { /* going down the rows */
+                row_ptrs2[magn*y+j] = (png_byte*) malloc(png_get_rowbytes(png_ptr, info_ptr));
+                row2 = row_ptrs2[magn*y+j];
+                for(i=0;i<magn;++i) {
+                    ptr2 = &(row2[(magn*x+i)*3]);
+                    ptr2[0] = ptr[0];
+                    ptr2[1] = ptr[1];
+                    ptr2[2] = ptr[2];
+                }
+            }
+        }
+    }
 
     png_write_image(png_ptr, row_ptrs2);
 
@@ -180,7 +184,7 @@ int main(int argc, char **argv)
         abort_("Usage: program_name <int: magnifying_factor> <file_in> <file_out>");
 
     int w, h, y;
-    int magn+atoi(argv[1]);
+    int magn=atoi(argv[1]);
     png_byte color_type, bit_depth;
     png_infop info_ptr;
 

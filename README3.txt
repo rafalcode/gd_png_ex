@@ -48,3 +48,6 @@ Interlacing and bitdepth
 OK so these are two esoteric aspects that you wouldn't normally think about at all in pngs
 but they're there ... they probab;y have their uses.
 Note how bitdepth of 16 demands twice the pixel memory (from exap.c)
+
+magn.c
+
