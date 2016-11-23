@@ -7,6 +7,10 @@
  * This software may be freely redistributed under the terms
  * of the X11 license.
  *
+ * In this prog we take a png file and render its target background to a uniform color.
+ * Often, the target background is sampled at the top left, almost at the edge, allowing some variation
+ * this background is filled with a unifrm color.
+ * It's a very simple procedure and can only single center object which are concave'y
  */
 
 #include <unistd.h>
@@ -76,10 +80,10 @@ png_bytep *read_png_file(char* file_name, int *w, int *h, png_byte *color_type, 
 
     png_read_info(png_ptr, info_ptr);
 
-    *w = info_ptr->width;
-    *h = info_ptr->height;
-    *color_type = info_ptr->color_type;
-    *bit_depth = info_ptr->bit_depth;
+    *w = png_get_image_width(png_ptr, info_ptr);
+    *h = png_get_image_height(png_ptr, info_ptr);
+    *color_type = png_get_color_type(png_ptr, info_ptr);
+    *bit_depth = png_get_bit_depth(png_ptr, info_ptr);
 
     /* I think there's only two values here, and one is extremely common and the other is very unusual
        int number_of_passes = png_set_interlace_handling(png_ptr);
@@ -161,7 +165,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
 
     i_t *lsci=calloc(3, sizeof(i_t)); /*Mne: Line Stop Channel Indices: for each RGB channel, indices of stop (pixel value changes from 4 dirs */
     /* background colour to be chosen as the background representative */
-    int bav[3];
+    int bav[3]; /* the three RGB values representing the target background */
     for(i=0;i<3;++i) 
         bav[i]=(int)row_ptrs[2][2*3+i]; /* background pixel value, at 2,2 for each of the three, second pixel starts at 6 */
     int bavra[6]={0}; /* bav range array */
@@ -188,7 +192,7 @@ void process_file(int w, int h, png_bytep *row_ptrs, png_infop info_ptr)
     for (y=0; y<h; y++) {
         row = row_ptrs[y];
         for (x=0; x<w; x++) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3;
             for(j=0;j<3;++j) 
                 if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
                     lsci[j].hb=y;
@@ -204,7 +208,7 @@ o1:
     for (y=h-1; y>=0; --y) {
         row = row_ptrs[y];
         for (x=0; x<w; x++) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3;
             for(j=0;j<3;++j) 
                 if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
                     lsci[j].he=y;
@@ -241,7 +245,7 @@ o2:
         row = row_ptrs[y];
         memset(nocha, 1, 3*sizeof(unsigned char));
         for (x=0; x<w; x++) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3;
             for(j=0;j<3;++j) 
                 if(((ptr[j] < bavra[2*j]) | (ptr[j] >bavra[2*j+1])) & nocha[j]) {
                     lsci[j].h1[y-fir]=x;
@@ -261,7 +265,7 @@ o2:
         row = row_ptrs[y];
         memset(nocha, 1, 3*sizeof(unsigned char));
         for (x=w-1; x>=0; --x) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3;
             for(j=0;j<3;++j) 
                 if(((ptr[j] < bavra[2*j]) | (ptr[j] > bavra[2*j+1])) & nocha[j]) {
                     lsci[j].h2[y-fir]=x;

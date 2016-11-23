@@ -78,10 +78,10 @@ png_bytep *read_png_file(char* file_name, int *w, int *h, png_byte *color_type, 
 
     png_read_info(png_ptr, info_ptr);
 
-    *w = info_ptr->width;
-    *h = info_ptr->height;
-    *color_type = info_ptr->color_type;
-    *bit_depth = info_ptr->bit_depth;
+    *w = png_get_image_width(png_ptr, info_ptr);
+    *h = png_get_image_height(png_ptr, info_ptr);
+    *color_type = png_get_color_type(png_ptr, info_ptr);
+    *bit_depth = png_get_bit_depth(png_ptr, info_ptr);
 
     /* I think there's only two values here, and one is extremely common and the other is very unusual
        int number_of_passes = png_set_interlace_handling(png_ptr);

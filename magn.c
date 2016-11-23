@@ -116,16 +116,16 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
     if (!fp)
         abort_("[write_png_file] File %s could not be opened for writing", file_name);
 
-    png_structp png_ptr;
-    png_infop info_ptr;
     int w2=magn*w;
     int h2=magn*h;
     int i, j, x, y;
 
     /* initialize stuff */
+    png_structp png_ptr;
     if( !(png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
         abort_("[write_png_file] png_create_write_struct failed");
 
+    png_infop info_ptr;
     if( !(info_ptr = png_create_info_struct(png_ptr)))
         abort_("[write_png_file] png_create_info_struct failed");
 
@@ -152,12 +152,12 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
     for (y=0; y<h; y++) {
         row = row_ptrs[y];
         for (x=0; x<w; x++) {
-            ptr = &(row[x*3]);
+            ptr = row+x*3;
             for(j=0;j<magn;++j) { /* going down the rows */
                 row_ptrs2[magn*y+j] = (png_byte*) malloc(png_get_rowbytes(png_ptr, info_ptr));
                 row2 = row_ptrs2[magn*y+j];
                 for(i=0;i<magn;++i) {
-                    ptr2 = &(row2[(magn*x+i)*3]);
+                    ptr2 = row2+(magn*x+i)*3;
                     ptr2[0] = ptr[0];
                     ptr2[1] = ptr[1];
                     ptr2[2] = ptr[2];

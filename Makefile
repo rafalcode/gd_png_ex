@@ -30,13 +30,14 @@ exap: exap.c
 # i.e. you can't assign directly from info_ptr like what I seem to be doing in olpng, etc.
 
 # outlines in pngs: preparation for eigenimages
-# it looks as if I dealth with this quite alot.
+# it looks as if I dealt with this quite alot.
+# forget olpng0.c it seems to be too alpha.
 olpng: olpng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 olpng_d: olpng.c
 	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
 
-# proof of concept on the kronecker/magnific I'm trying to achieve
+# proof of concept on the kronecker/magnifier I'm trying to achieve
 kro: kro0.c
 	${CC} ${CFLAGS} -DDBG -o $@ $^ ${SPECLIBS}
 

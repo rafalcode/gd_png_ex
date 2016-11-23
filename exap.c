@@ -118,7 +118,7 @@ void process_file(infcntr *infc)
     for (j=0; j<infc->h; j++) {
         crptr = infc->rpta[j];
         for (i=0; i<infc->w; i++) {
-            pdptr = &(crptr[i*infc->nc]);
+            pdptr = crptr+i*infc->nc;
             if(j==10) {
                 printf("Pixel at position [ %d - %d ] has RGBA values: ", i, j);
                 for(k=0;k<infc->nc;++k) 
