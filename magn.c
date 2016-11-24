@@ -151,11 +151,11 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
     png_byte *row, *row2, *ptr, *ptr2;
     for (y=0; y<h; y++) {
         row = row_ptrs[y];
-        for (x=0; x<w; x++) {
-            ptr = row+x*3;
-            for(j=0;j<magn;++j) { /* going down the rows */
-                row_ptrs2[magn*y+j] = (png_byte*) malloc(png_get_rowbytes(png_ptr, info_ptr));
-                row2 = row_ptrs2[magn*y+j];
+        for(j=0;j<magn;++j) { /* going down the rows */
+            row_ptrs2[magn*y+j] = malloc(png_get_rowbytes(png_ptr, info_ptr));
+            row2 = row_ptrs2[magn*y+j];
+            for (x=0; x<w; x++) {
+                ptr = row+x*3;
                 for(i=0;i<magn;++i) {
                     ptr2 = row2+(magn*x+i)*3;
                     ptr2[0] = ptr[0];

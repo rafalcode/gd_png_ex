@@ -18,11 +18,15 @@ int main(int argc, char *argv[])
     }
 
     int B[oh*magn][ow*magn]={0};
+    int *BA;
     for(i=0;i<oh;++i) 
-        for(j=0;j<ow;++j) 
-            for(k=0;k<magn;++k) 
+        for(k=0;k<magn;++k) {
+            BA=B[magn*i+k];
+            for(j=0;j<ow;++j) 
                 for(m=0;m<magn;++m) 
-                    B[magn*i+k][magn*j+m] = A[i][j];
+                    // B[magn*i+k][magn*j+m] = A[i][j];
+                    BA[magn*j+m] = A[i][j];
+        }
 
     printf("------------------------\n"); 
     for(i=0;i<oh*magn;++i) {
