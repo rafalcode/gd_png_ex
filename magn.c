@@ -158,11 +158,17 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
                 ptr = row+x*3;
                 for(i=0;i<magn;++i) {
                     ptr2 = row2+(magn*x+i)*3;
+#ifdef DBG
+                    printf("%d,%d<-%d,%d ", magn*x+i, magn*y+j, x, y);
+#endif
                     ptr2[0] = ptr[0];
                     ptr2[1] = ptr[1];
                     ptr2[2] = ptr[2];
                 }
             }
+#ifdef DBG
+            printf("\n"); 
+#endif
         }
     }
 
@@ -174,6 +180,11 @@ void write_png_file(char* file_name, int w, int h, int magn, png_byte color_type
 
     png_write_end(png_ptr, NULL); // fine here, but not in the read, where I tried 
     png_destroy_write_struct(&png_ptr, &info_ptr);
+
+    // free the output container
+    for (y=0; y<h2; y++)
+        free(row_ptrs2[y]);
+    free(row_ptrs2);
 
     fclose(fp);
 }
