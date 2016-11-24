@@ -7,3 +7,6 @@ in order to compile.
 ## Early proof-of-api-use programs
 * exap: compile with 
 * chapng: change png: takes an RGB and sets does a simple manipulation of the colours.
+
+# Working and hopefully useful programs
+* magpng: magnifies a png with out any manipulation. Like a kronecker product.
