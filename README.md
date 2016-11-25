@@ -11,3 +11,5 @@ in order to compile.
 # Working and hopefully useful programs
 * magpng: magnifies a full png (usually very small ones) without any manipulation, so that we see a highly pixelated version. 
 Actually this is a kronecker product operation. TODO: magnify not the enitre input png, but rather a region of one.
+(Jst to note that by version 51f460c, when it started working properly, I was also getting a valgrind clean bill of health,
+which means that sort of thing is possible in libpng).
