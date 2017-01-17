@@ -63,6 +63,10 @@ imtile: imtile.c
 tilim: tilim.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS2}
 
+# read and print out png values
+rdprtn: rdprtn.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
 .PHONY: clean
 
 clean:

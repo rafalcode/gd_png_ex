@@ -13,3 +13,6 @@ in order to compile.
 Actually this is a kronecker product operation. TODO: magnify not the enitre input png, but rather a region of one.
 (Jst to note that by version 51f460c, when it started working properly, I was also getting a valgrind clean bill of health,
 which means that sort of thing is possible in libpng).
+
+# undocumented bits of code
+simpng.c this was created from magpng ... it's almost the same. Not sure what I had in mind.
