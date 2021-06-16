@@ -4,7 +4,7 @@ DCFLAGS=-g -Wall -DDBG
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d
+EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d mandpng spng0
 
 # Farily well made image splitter, for use with metapixel ..uses libgd
 splim: splim.c
@@ -44,7 +44,7 @@ kro: kro0.c
 
 magpng: magpng.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
-magn_d: magn.c
+magpng_d: magpng.c
 	${CC} ${DCFLAGS} -o $@ $^ ${SPECLIBS}
 
 # and behold Istart doing what I've alreay done.
@@ -65,6 +65,15 @@ tilim: tilim.c
 
 # read and print out png values
 rdprtn: rdprtn.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
+# Courtesy of Andrews Greensted, originally called makePNG.
+mandpng: mandpng.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
+
+#spng series, these are just simple pngs  of size 16x16 but these can be easily changed.
+# creating a png from scratch.
+spng0: spng0.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
 .PHONY: clean
