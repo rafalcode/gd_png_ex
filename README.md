@@ -16,3 +16,7 @@ which means that sort of thing is possible in libpng).
 
 # undocumented bits of code
 simpng.c this was created from magpng ... it's almost the same. Not sure what I had in mind.
+
+# rect234.png
+You'll look at this and say. Did I generate this? Well the random x positioing of the rectangles is probab;y difficult
+and the name of te file suggests ... an inkscape template!

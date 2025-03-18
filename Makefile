@@ -4,7 +4,7 @@ DCFLAGS=-g -Wall -DDBG
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d mandpng spng0 setc0
+EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d mandpng spng0 setc0 w2bthresh findb fb2 crea fb7p fb3p
 
 # Fairly well made image splitter, for use with metapixel ... WARNING is not libpng ... uses libgd!
 splim: splim.c
@@ -50,7 +50,6 @@ magpng_d: magpng.c
 	${CC} ${DCFLAGS} -o $@ $^ ${SPECLIBS}
 
 # and behold Istart doing what I've alreay done.
-# and behold Istart doing what I've alreay done.
 pn4: pn4.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
@@ -79,8 +78,27 @@ spng0: spng0.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
 # setting a certain colour to something.
+w2bthresh: w2bthresh.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
 setc0: setc0.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
+# find black.
+findb: findb.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+# variation pick out pur black pixels.
+fb2: fb2.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
+# this one hard coded, only for seven point calcs of front bike frame ratios
+fb7p: fb7p.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
+# gimp is so fiddly, 7 points is too much. Go for three
+fb3p: fb3p.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
+# from chatgpt
+crea: crea.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
 
 .PHONY: clean
 
