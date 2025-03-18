@@ -4,7 +4,7 @@ DCFLAGS=-g -Wall -DDBG
 SPECLIBS=-lpng
 SPECLIBS2=-lgd -lm
 
-EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d mandpng spng0 setc0 w2bthresh findb fb2 crea fb7p fb3p
+EXES=splim cotten imtile tilim exap chapng seepx olpng olpng_d pn4 kro magpng magpng_d mandpng spng0 setc0 w2bthresh findb fb2 crea fb7p fb3p pagemarg
 
 # Fairly well made image splitter, for use with metapixel ... WARNING is not libpng ... uses libgd!
 splim: splim.c
@@ -84,8 +84,10 @@ w2bthresh: w2bthresh.c
 setc0: setc0.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
-# find black.
+# find black, which utrned into a an edge-of-page-in-png detector. Entirely naive.
 findb: findb.c
+	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+pagemarg: pagemarg.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 # variation pick out pur black pixels.
 fb2: fb2.c
