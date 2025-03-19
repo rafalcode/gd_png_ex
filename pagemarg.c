@@ -180,6 +180,7 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
     row = row_ptrs[y];
     int nw; //new width
     int lpyes=0; // left point found.
+    int leftx=0;
 
     // search from the left.
     for (x=0; x<w; x++) {
@@ -187,6 +188,7 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
         if( (ptr2[0] < ptr[0]) & (ptr2[1] < ptr[1]) & (ptr2[2] < ptr[2]) & ((ptr[0] - ptr2[0])> 20)) {
             nw=w-x;
             lpyes=1;
+            leftx=x;
         }
         if(lpyes)
             break;
@@ -194,7 +196,6 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
         ptr2[1] = ptr[1];
         ptr2[2] = ptr[2];
     }
-    int leftx=x;
     int rpyes=0;
     ptr2[0]=ptr2[1]=ptr2[2]=255;
     // search from the right.
@@ -219,12 +220,14 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
     x=w/2;
     int nh=h; // new height
     int tpyes=0;
+    int top_y=0;
     for (y=0; y<h; y++) {
         row = row_ptrs[y];
         ptr = row+x*3;
         //  printf("ptr0:%i\n", ptr[0]); 
         if( (ptr2[0] < ptr[0]) & (ptr2[1] < ptr[1]) & (ptr2[2] < ptr[2]) & ((ptr[0] - ptr2[0])> 20)) {
             nh=h-y;
+            top_y=y;
             tpyes=1;
         }
         if(tpyes)
@@ -234,7 +237,6 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
         ptr2[2] = ptr[2];
     }
     // from bottom
-    int top_y=y;
     int bpyes=0;
     ptr2[0]=ptr2[1]=ptr2[2]=255;
     for (y=h-1; y>=0; y--) {
@@ -250,19 +252,28 @@ void diffinlin3(int w, int h, int bthresh, png_byte color_type, png_byte bit_dep
         ptr2[1] = ptr[1];
         ptr2[2] = ptr[2];
     }
-    if(lpyes | rpyes | tpyes | bpyes)
-        printf("convert %s -crop %ix%i+%i+%i +repage <outfilename>\n", fn, nw, nh, leftx, top_y);
+
+    char cmdstr[256]={0};
+    char newfn[64]={0};
+    char *tmp=strrchr(fn, '.');
+    sprintf(newfn, "%.*s.jpg", (int)(tmp-fn), fn);
+    if(lpyes | rpyes | tpyes | bpyes) {
+        sprintf(cmdstr, "convert %s -crop %ix%i+%i+%i +repage %s\n", fn, nw, nh, leftx, top_y, newfn);
+        printf("Running following system command:\n%s\n", cmdstr); 
+        system(cmdstr);
+    }
 }
 
 int main(int argc, char **argv)
 {
-    if(argc!=3) {
+    if(argc!=2) {
         printf("Usage notes for \"%s\":\n", argv[0]);
-        printf("This program finds the black margins in an image. Args: 1) png image 2) max val. for black. 2,5, 10 etc.\n");
+        // printf("This program finds the black margins in an image. Args: 1) png image 2) \"-f\" to force image magick crop and conv to jpglack. 2,5, 10 etc.\n");
+        printf("This program finds the black margins in an image. One args: png image.\n");
         exit(EXIT_FAILURE);
     }
 
-    int bthresh=atoi(argv[2]);
+    int bthresh=10; // used to arg 2 ... don't know what it is really ... the integer that constitutes black I suppose
     int w, h, y;
     png_byte color_type, bit_depth;
     png_infop info_ptr;

@@ -1,7 +1,11 @@
 # gd\_png\_ex
-programming examples of libgd and libpng in action
-CLearly you need to have those libraries and their header files installed in hyour system
-in order to compile.
+
+Sorry for the terrible name. I wanted to rename .. but it's a bit too late
+seeing as some og ht code here is from 2010 and earlier.
+
+What's it about? programming examples of libgd and libpng in action
+
+(Quite clearly you need to have those libraries and their header files installed in your system in order to compiler)0.
 
 # Programs
 ## Early proof-of-api-use programs
@@ -20,3 +24,6 @@ simpng.c this was created from magpng ... it's almost the same. Not sure what I 
 # rect234.png
 You'll look at this and say. Did I generate this? Well the random x positioing of the rectangles is probab;y difficult
 and the name of te file suggests ... an inkscape template!
+
+# pagemarg.c
+takes pang with black background and fins the let, right, top bottom points where it ends that central page in the png begins.

@@ -85,10 +85,14 @@ setc0: setc0.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 
 # find black, which utrned into a an edge-of-page-in-png detector. Entirely naive.
+# # what we're looking at here are png images of pages, which, on top of the normal page
+# margin, also have a black margin along the perimter. This is what we want to get rid of.
+# we set a ptr2, an RGB triplet to 255,255,255 which is whit
 findb: findb.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
 pagemarg: pagemarg.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS}
+
 # variation pick out pur black pixels.
 fb2: fb2.c
 	${CC} ${CFLAGS} -o $@ $^ ${SPECLIBS} -lm
